@@ -4,68 +4,113 @@
     <meta charset="UTF-8">
     <title>3D Cosmic Tycoon - Rebirth Helper Edition</title>
     <style>
-        :root { --neon: #0f8; --accent: #a335ee; --gold: #ffeb3b; --gray: #444; --danger: #ff4444; --bg: rgba(5,5,15,0.95); --lucky: #00ffff; }
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
-        #gui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; color: white; z-index: 100; }
+        :root { 
+            --neon: #0f8; --accent: #a335ee; --gold: #ffeb3b; --gray: #444; --danger: #ff4444; 
+            --bg: rgba(5,5,15,0.95); --lucky: #00ffff;
+            /* 基準となるフォントサイズを画面高に対して設定 */
+            font-size: 1.5vh; 
+        }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #000; 
+            font-family: 'Arial Black', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #gui-layer { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            pointer-events: none; color: white; z-index: 100; 
+        }
         
         .hud { 
-            position: absolute; top: 20px; left: 20px; 
-            background: rgba(0,10,20,0.9); padding: 20px; border-left: 5px solid var(--neon); 
-            pointer-events: auto; border-radius: 0 20px 20px 0; min-width: 260px;
+            position: absolute; top: 3vh; left: 2vw; 
+            background: transparent; padding: 2vh; border-left: 0.5vh solid var(--neon); 
+            pointer-events: auto; border-radius: 0 2vh 2vh 0; min-width: 18vw;
         }
-        .hud-value { font-size: 1.8rem; font-weight: 900; }
-        #fever-timer { font-size: 1rem; margin-top: 10px; font-weight: bold; }
-        #box-timer { font-size: 0.9rem; margin-top: 5px; color: var(--lucky); font-weight: bold; }
+        .hud-value { font-size: 2.2rem; font-weight: 900; }
+        #fever-timer { font-size: 1.2rem; margin-top: 1vh; font-weight: bold; }
+        #box-timer { font-size: 1.1rem; margin-top: 0.5vh; color: var(--lucky); font-weight: bold; }
 
-        .top-right-area { position: absolute; top: 20px; right: 20px; pointer-events: auto; }
+        .top-right-area { position: absolute; top: 3vh; right: 2vw; pointer-events: auto; }
         #settings-toggle { 
-            background: #222; color: white; border: 2px solid #444; width: 60px; height: 60px; 
-            border-radius: 15px; cursor: pointer; font-size: 1.5rem; transition: 0.3s;
+            background: #222; color: white; border: 0.3vh solid #444; 
+            width: 8vh; height: 8vh; 
+            border-radius: 2vh; cursor: pointer; font-size: 4vh; transition: 0.3s;
         }
         #settings-menu {
-            position: absolute; top: 70px; right: 0; background: var(--bg); border: 2px solid var(--accent);
-            padding: 20px; border-radius: 20px; display: none; flex-direction: column; gap: 15px; min-width: 200px;
+            position: absolute; top: 9vh; right: 0; background: var(--bg); border: 0.3vh solid var(--accent);
+            padding: 2vh; border-radius: 2vh; display: none; flex-direction: column; gap: 1.5vh; min-width: 15vw;
         }
-        .menu-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; color: white; }
+        .menu-btn { width: 100%; padding: 1.5vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: 900; color: white; font-size: 1.2rem; }
         
         #discard-btn {
-            position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 22vh; left: 50%; transform: translateX(-50%);
             background: linear-gradient(#ff4444, #990000); color: white;
-            border: 3px solid white; padding: 15px 50px; font-size: 1.5rem; font-weight: 900;
-            border-radius: 50px; cursor: pointer; pointer-events: auto; display: none; z-index: 200;
+            border: 0.3vh solid white; padding: 2vh 5vw; font-size: 1.8rem; font-weight: 900;
+            border-radius: 5vh; cursor: pointer; pointer-events: auto; display: none; z-index: 200;
         }
 
-        .collect-area { position: absolute; right: 40px; bottom: 40px; pointer-events: auto; }
+        .collect-area { position: absolute; right: 3vw; bottom: 5vh; pointer-events: auto; }
         #collect-all-btn { 
             background: radial-gradient(circle, var(--gold), #f9a825);
-            border: 4px solid #fff; width: 160px; height: 160px; 
-            font-size: 1.5rem; font-weight: 900; color: #331a00; cursor: pointer; border-radius: 50%;
+            border: 0.5vh solid #fff; width: 22vh; height: 22vh; 
+            font-size: 1.8rem; font-weight: 900; color: #331a00; cursor: pointer; border-radius: 50%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 0 3vh rgba(255,235,59,0.3);
         }
 
-        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); pointer-events: auto; text-align: center; }
-        #rebirth-btn { padding: 15px 40px; font-size: 1.5rem; font-weight: 900; border-radius: 15px; border: none; transition: 0.3s; }
-        #rebirth-btn.available { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); cursor: pointer; }
+        .controls { position: absolute; bottom: 4vh; left: 50%; transform: translateX(-50%); pointer-events: auto; text-align: center; }
+        #rebirth-btn { padding: 2vh 6vw; font-size: 2rem; font-weight: 900; border-radius: 2vh; border: none; transition: 0.3s; }
+        #rebirth-btn.available { background: var(--neon); color: #000; box-shadow: 0 0 3vh var(--neon); cursor: pointer; }
         #rebirth-btn.locked { background: var(--gray); color: #888; cursor: not-allowed; opacity: 0.6; }
         
-        #lib-window { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 75%; background: var(--bg); border: 2px solid var(--accent); display: none; flex-direction: column; padding: 30px; border-radius: 30px; pointer-events: auto; z-index: 500; }
-        #lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; overflow-y: auto; padding: 10px; }
+        .window-base { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 80vw; height: 70vh; background: var(--bg); border: 0.3vh solid var(--accent); 
+            display: none; flex-direction: column; padding: 4vh; border-radius: 3vh; pointer-events: auto; z-index: 500; 
+        }
+        #lib-grid, #shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15vh, 1fr)); gap: 2vh; overflow-y: auto; padding: 1vh; }
         
-        #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: 900; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 300; text-shadow: 0 0 20px #fff; }
+        .shop-item { background: rgba(255,255,255,0.05); border: 0.2vh solid #444; border-radius: 2vh; padding: 2vh; text-align: center; transition: 0.3s; }
+        .shop-buy-btn { width: 100%; margin-top: 1vh; padding: 1vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: bold; background: var(--gold); color: #000; font-size: 1rem; }
+        /* お金が足りない時のボタン用スタイル */
+        .shop-buy-btn.locked { background: #444 !important; color: #888 !important; cursor: not-allowed; opacity: 0.7; }
+
+        #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 6vh; font-weight: 900; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 300; text-shadow: 0 0 2vh #fff; }
         
         .fever-active-ui { animation: fever-pulse 1s infinite; pointer-events: none; position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 50; display: none; }
         @keyframes fever-pulse {
-            0% { box-shadow: inset 0 0 100px rgba(255,0,0,0.2); }
-            50% { box-shadow: inset 0 0 200px rgba(255,200,0,0.4); }
-            100% { box-shadow: inset 0 0 100px rgba(255,0,0,0.2); }
+            0% { box-shadow: inset 0 0 10vh rgba(255,0,0,0.2); }
+            50% { box-shadow: inset 0 0 20vh rgba(255,200,0,0.4); }
+            100% { box-shadow: inset 0 0 10vh rgba(255,0,0,0.2); }
         }
-        @keyframes rainbow-border {
-            0% { border-color: #ff0000; }
-            33% { border-color: #00ff00; }
-            66% { border-color: #0000ff; }
-            100% { border-color: #ff0000; }
+
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 1vh; font-size: 1.1rem; }
+        .stats-table th, .stats-table td { border: 0.1vh solid #444; padding: 1.2vh; text-align: left; }
+        .stats-table th { background: rgba(163,53,238,0.3); color: var(--gold); }
+
+        /* レインボーキャラ用の図鑑スタイル */
+        .rainbow-card {
+            background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000) !important;
+            background-size: 400% 400% !important;
+            animation: rainbow-bg 5s linear infinite !important;
+            border: 0.3vh solid #fff !important;
+            box-shadow: 0 0 1.5vh rgba(255,255,255,0.5);
         }
-        .rainbow-frame { animation: rainbow-border 3s linear infinite; border-width: 3px !important; }
+        @keyframes rainbow-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .rainbow-card * {
+            text-shadow: 0.1vh 0.1vh 0.2vh #000;
+        }
     </style>
 </head>
 <body>
@@ -76,40 +121,67 @@
     <div class="top-right-area">
         <button id="settings-toggle" onclick="toggleSettings()">⚙</button>
         <div id="settings-menu">
-            <button class="menu-btn" style="background:var(--accent)" onclick="toggleLib()">📖 ARCHIVE</button>
-            <button class="menu-btn" style="background:#333" onclick="toggleFullscreen()">🖥 FULLSCREEN</button>
-            <button class="menu-btn" style="background:transparent; color:red; border:1px solid red; font-size:0.7rem;" onclick="resetGame()">⚠ RESET</button>
+            <button class="menu-btn" style="background:var(--accent)" onclick="toggleLib()" id="btn-archive">📖 ARCHIVE</button>
+            <button class="menu-btn" style="background:#ff9800" onclick="toggleShop()" id="btn-shop">🛍️ SHOP</button>
+            <button class="menu-btn" style="background:#2196F3" onclick="toggleStats()" id="btn-stats">📊 STATS</button>
+            <button class="menu-btn" style="background:#4caf50" onclick="toggleLanguage()" id="btn-lang">🌐 JP / EN</button>
+            <button class="menu-btn" style="background:#333" onclick="toggleFullscreen()" id="btn-full">🖥 FULLSCREEN</button>
+            <button class="menu-btn" style="background:transparent; color:red; border:1px solid red; font-size:0.8rem;" onclick="resetGame()" id="btn-reset">⚠ RESET</button>
         </div>
     </div>
 
     <div class="hud">
-        <div style="color:var(--gold)">CASH: <span class="hud-value">$<span id="money">0</span></span></div>
+        <div style="color:var(--gold)"><span id="txt-cash">CASH</span>: <span class="hud-value">$<span id="money">0</span></span></div>
         <div style="color:var(--neon)">PPS: <span class="hud-value">$<span id="pps">0</span>/s</span></div>
-        <div style="color:var(--accent)">REBIRTH: <span class="hud-value">Lv.<span id="rebirth-lv">0</span></span></div>
+        <div style="color:var(--accent)"><span id="txt-rebirth-label">REBIRTH</span>: <span class="hud-value"><span id="rebirth-lv">0</span></span></div>
         <div id="box-timer">Secret Box: 0 / 20</div>
         <div id="fever-timer">Next Fever: --:--</div>
     </div>
 
-    <button id="discard-btn" onclick="window.discardSelected()">🗑️ DISCARD FOR 50%</button>
+    <button id="discard-btn" onclick="discardSelected()">🗑️ DISCARD FOR 50%</button>
 
-    <div id="lib-window">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
-            <div style="color:var(--gold); font-size:1.5rem; font-weight:bold;">COLLECTION (Total 201)</div>
-            <button onclick="toggleLib()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">CLOSE</button>
+    <div id="lib-window" class="window-base">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:2vh;">
+            <div style="color:var(--gold); font-size:2.5rem; font-weight:bold;" id="txt-lib-title">COLLECTION</div>
+            <button onclick="toggleLib()" style="background:var(--danger); color:white; border:none; padding:1.5vh 2vw; border-radius:1vh; cursor:pointer;" class="btn-close-ui">CLOSE</button>
         </div>
         <div id="lib-grid"></div>
     </div>
 
+    <div id="shop-window" class="window-base">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:2vh;">
+            <div style="color:var(--gold); font-size:2.5rem; font-weight:bold;" id="txt-shop-title">GALAXY SHOP</div>
+            <button onclick="toggleShop()" style="background:var(--danger); color:white; border:none; padding:1.5vh 2vw; border-radius:1vh; cursor:pointer;" class="btn-close-ui">CLOSE</button>
+        </div>
+        <div id="shop-grid"></div>
+    </div>
+
+    <div id="stats-window" class="window-base">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:2vh;">
+            <div style="color:var(--gold); font-size:2.5rem; font-weight:bold;" id="txt-stats-title">PROBABILITY / STATS</div>
+            <button onclick="toggleStats()" style="background:var(--danger); color:white; border:none; padding:1.5vh 2vw; border-radius:1vh; cursor:pointer;" class="btn-close-ui">CLOSE</button>
+        </div>
+        <div style="overflow-y: auto;">
+            <h3 style="color:var(--neon)" id="txt-spawn-prob">Spawn Probability</h3>
+            <table class="stats-table" id="table-spawn"></table>
+            <h3 style="color:#ffeb3b; margin-top:3vh;" id="txt-fever-prob">Fever Spawn Probability</h3>
+            <table class="stats-table" id="table-fever"></table>
+            <h3 style="color:var(--lucky); margin-top:3vh;" id="txt-box-prob">Secret Box Contents</h3>
+            <table class="stats-table" id="table-box"></table>
+        </div>
+    </div>
+
     <div class="collect-area">
-        <button id="collect-all-btn" onclick="window.collectAll()">💰 COLLECT<br><span id="pending-sum" style="font-size:1rem;">$0</span></button>
+        <button id="collect-all-btn" onclick="collectAll()">💰 <span id="txt-collect">COLLECT</span><br><span id="pending-sum" style="font-size:1.4rem;">$0</span></button>
     </div>
 
     <div id="msg">NEW!</div>
 
     <div class="controls">
-        <div id="rebirth-cond" style="color:var(--gold); margin-bottom:5px; font-size:0.9rem;">Cost: $100,000</div>
-        <div id="rebirth-char-cond" style="color:var(--accent); margin-bottom:10px; font-size:0.8rem; background:rgba(163,53,238,0.2); padding:5px 15px; border-radius:10px; display:inline-block;">Required: ???</div>
-        <button id="rebirth-btn" onclick="window.rebirth()">🔄 REBIRTH</button>
+        <div id="rebirth-cond" style="color:var(--gold); margin-bottom:1vh; font-size:1.1rem;">Cost: $100,000</div>
+        <div id="rebirth-char-cond" style="color:var(--accent); margin-bottom:1.5vh; font-size:1rem; background:rgba(163,53,238,0.2); padding:1vh 2vw; border-radius:1.5vh; display:inline-block;">Required: ???</div>
+        <br>
+        <button id="rebirth-btn" onclick="rebirth()">🔄 <span id="txt-rebirth-btn">REBIRTH</span></button>
     </div>
 </div>
 
@@ -118,13 +190,58 @@
 <script type="module">
     import * as THREE from 'three';
 
+    const bgm = new Audio('bgm.mp3');
+    bgm.loop = true;
+    bgm.volume = 0.5;
+
+    const clickSound = new Audio('click.mp3');
+    function playClick() {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(() => {});
+    }
+
+    window.addEventListener('mousedown', () => {
+        if (bgm.paused) bgm.play().catch(() => {});
+    }, { once: true });
+
     let money = 500, rebirths = 0, lastS = 0, lastIncomeTick = 0;
     let normalSpawnCount = 0; 
     let myItems = new Array(16).fill(null);
     let library = {}; 
     let charInSlots = new Array(16).fill(null);
+    let charIdentity = new Array(16).fill(null); 
     let slotObjects = [], conveyorGroups = [];
     let selectedIdx = -1, hoveredIdx = -1, hoveredConveyorId = null;
+
+    let ownedDecor = ["default"];
+    let currentDecor = "default";
+    let currentLang = "en"; 
+
+    const i18n = {
+        en: {
+            archive: "📖 ARCHIVE", shop: "🛍️ SHOP", stats: "📊 STATS", lang: "🌐 LANGUAGE", full: "🖥 FULLSCREEN", reset: "⚠ RESET",
+            cash: "CASH", rebirth: "REBIRTH", nextFever: "Next Fever", secretBox: "Secret Box", collect: "COLLECT",
+            close: "CLOSE", libTitle: "COLLECTION", shopTitle: "GALAXY SHOP", statsTitle: "PROBABILITY / STATS",
+            spawnProb: "Normal Spawn Probability", feverProb: "Fever Spawn Probability", boxProb: "Secret Box Contents", rarity: "Rarity", chance: "Chance", item: "Item",
+            cost: "Cost", required: "Required", maxRebirth: "MAX REBIRTH REACHED", discard: "🗑️ DISCARD FOR 50%",
+            msgNew: "NEW!", msgNoSlots: "NO SLOTS LEFT!", msgLucky: "LUCKY GET!!", msgFever: "🔥 FEVER STARTED !!", msgSold: "売却しました"
+        },
+        jp: {
+            archive: "📖 図鑑", shop: "🛍️ ショップ", stats: "📊 確率一覧", lang: "🌐 言語切替", full: "🖥 全画面", reset: "⚠ リセット",
+            cash: "所持金", rebirth: "転生レベル", nextFever: "次回のフィーバー", secretBox: "シークレット箱", collect: "回収",
+            close: "閉じる", libTitle: "コレクション", shopTitle: "ギャラクシーショップ", statsTitle: "出現確率・内訳",
+            spawnProb: "通常スポーン確率", feverProb: "フィーバー中確率", boxProb: "シークレットボックス内訳", rarity: "レアリティ", chance: "確率", item: "内容",
+            cost: "費用", required: "必要条件", maxRebirth: "最大レベルに達しました", discard: "🗑️ 50%で売却",
+            msgNew: "新発見!", msgNoSlots: "スロットが一杯です!", msgLucky: "ラッキー獲得!!", msgFever: "🔥 フィーバー突入 !!", msgSold: "売却しました"
+        }
+    };
+
+    const shopItems = [
+        { id: "nebula_blue", name: "Deep Blue Nebula", cost: 50000, color: 0x000033, desc: "宇宙を深い青に染める" },
+        { id: "nebula_purple", name: "Purple Void", cost: 250000, color: 0x220033, desc: "高貴な紫の宇宙" },
+        { id: "nebula_red", name: "Red Nova", cost: 1000000, color: 0x330000, desc: "情熱的な赤の宇宙" },
+        { id: "golden_stars", name: "Golden Galaxy", cost: 10000000, color: 0x221100, desc: "黄金に輝く星々" }
+    ];
 
     const FEVER_INTERVAL = 900; 
     const FEVER_DURATION = 60;   
@@ -132,26 +249,15 @@
     let isFeverActive = false;
     let luckySpawnedInFever = false;
 
-    // --- Audio System ---
-    const listener = new THREE.AudioListener();
-    const audioLoader = new THREE.AudioLoader();
-    const bgmNormal = new THREE.Audio(listener);
-    const bgmFever = new THREE.Audio(listener);
-    const clickSound = new THREE.Audio(listener);
-
-    audioLoader.load('bgm.mp3', (buffer) => { bgmNormal.setBuffer(buffer); bgmNormal.setLoop(true); bgmNormal.setVolume(0.4); });
-    audioLoader.load('fever.mp3', (buffer) => { bgmFever.setBuffer(buffer); bgmFever.setLoop(true); bgmFever.setVolume(0.5); });
-    audioLoader.load('click.mp3', (buffer) => { clickSound.setBuffer(buffer); clickSound.setVolume(0.5); });
-
-    function playClick() { if(clickSound.isPlaying) clickSound.stop(); clickSound.play(); }
-    function updateBGM(isFever) {
-        if(isFever) {
-            if(bgmNormal.isPlaying) bgmNormal.stop();
-            if(!bgmFever.isPlaying) bgmFever.play();
-        } else {
-            if(bgmFever.isPlaying) bgmFever.stop();
-            if(!bgmNormal.isPlaying) bgmNormal.play();
-        }
+    function formatValue(num) {
+        if (num < 1000) return Math.floor(num).toLocaleString();
+        const suffixes = ["", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg"];
+        const tier = Math.floor(Math.log10(num) / 3);
+        if (tier === 0) return Math.floor(num).toLocaleString();
+        const suffix = suffixes[tier] || "e" + (tier * 3);
+        const scale = Math.pow(10, tier * 3);
+        const scaled = num / scale;
+        return scaled.toFixed(2) + suffix;
     }
 
     const rebirthRequirements = [
@@ -159,56 +265,52 @@
     ];
 
     const rarities = [
-        { name: "N", color: "#ffffff", chance: 85, basePrice: 50, baseValue: 4 },
-        { name: "R", color: "#0070dd", chance: 12, basePrice: 500, baseValue: 48 },
-        { name: "SR", color: "#a335ee", chance: 2.4, basePrice: 7500, baseValue: 720 },
-        { name: "SSR", color: "#ff8000", chance: 0.5, basePrice: 1000000, baseValue: 100000 },
-        { name: "LEGEND", color: "#ff00ff", chance: 0.1, basePrice: 125000000, baseValue: 14000000 },
-        { name: "OG", color: "#e91e63", chance: 0.01, basePrice: 9999999, baseValue: 55555555 }
+        { name: "normal", color: "#ffffff", chance: 85, basePrice: 50, baseValue: 4 },
+        { name: "rare", color: "#0070dd", chance: 12, basePrice: 500, baseValue: 48 },
+        { name: "epic", color: "#a335ee", chance: 2.4, basePrice: 7500, baseValue: 720 },
+        { name: "legend", color: "#ff8000", chance: 0.5, basePrice: 1000000, baseValue: 100000 },
+        { name: "secret", color: "#ff00ff", chance: 0.1, basePrice: 125000000, baseValue: 14000000 },
+        { name: "original", color: "#e91e63", chance: 0.01, basePrice: 9999999, baseValue: 55555555 }
     ];
 
     const feverChances = [
-        { name: "N", color: "#ffffff", chance: 45, basePrice: 50, baseValue: 4 },
-        { name: "R", color: "#0070dd", chance: 35, basePrice: 500, baseValue: 48 },
-        { name: "SR", color: "#a335ee", chance: 12, basePrice: 7500, baseValue: 720 },
-        { name: "SSR", color: "#ff8000", chance: 5.4, basePrice: 1000000, baseValue: 100000 },
-        { name: "LEGEND", color: "#ff00ff", chance: 2.5, basePrice: 125000000, baseValue: 14000000 },
-        { name: "OG", color: "#e91e63", chance: 0.1, basePrice: 9999999, baseValue: 55555555 }
+        { name: "normal", color: "#ffffff", chance: 45, basePrice: 50, baseValue: 4 },
+        { name: "rare", color: "#0070dd", chance: 35, basePrice: 500, baseValue: 48 },
+        { name: "epic", color: "#a335ee", chance: 12, basePrice: 7500, baseValue: 720 },
+        { name: "legend", color: "#ff8000", chance: 5.4, basePrice: 1000000, baseValue: 100000 },
+        { name: "secret", color: "#ff00ff", chance: 2.5, basePrice: 125000000, baseValue: 14000000 },
+        { name: "original", color: "#e91e63", chance: 0.1, basePrice: 9999999, baseValue: 55555555 }
     ];
 
     const charData = {
-        "N": [
-            {e:"💀", n:"Skeleton"},{e:"🗿", n:"Stone Man"},{e:"🧟", n:"Zombie"},{e:"👻", n:"Spirit"},{e:"🐀", n:"Rat"},{e:"🐸", n:"Frog"},{e:"🐈", n:"Cat"},{e:"🐕", n:"Dog"},{e:"🐢", n:"Turtle"},{e:"🐌", n:"Snail"},
+        "normal": [
+            {e:"⚽", n:"Soccer Ball"},
+            {e:"💀", n:"Skeleton"},{e:"🗿", n:"Stone Man"},{e:"🧟", n:"Zombie"},{e:"👻", n:"Spirit"},{e:"🐀", n:"Rat"},{e:"🐸", n:"Frog"},{e:"🐈", n:"Cat"},{e:"🐕", n:"Dog"},{e:"亀", n:"Turtle"},{e:"🐌", n:"Snail"},
             {e:"🐿️", n:"Squirrel"},{e:"🐇", n:"Bunny"},{e:"🐤", n:"Chick"},{e:"🐜", n:"Ant"},{e:"🦟", n:"Mosquito"},{e:"🐛", n:"Bug"},{e:"🍄", n:"Mushy"},{e:"🪵", n:"Wood"},{e:"🌿", n:"Leaf"},{e:"💩", n:"Poop"},
             {e:"🪨", n:"Rock"},{e:"🦴", n:"Bone"},{e:"🍃", n:"Sprout"},{e:"🥚", n:"Egg"},{e:"🥔", n:"Potato"},{e:"🥕", n:"Carrot"},{e:"🌽", n:"Corn"},{e:"🌻", n:"Flower"},{e:"🦗", n:"Cricket"},{e:"🕸️", n:"Web"},
-            {e:"🧱", n:"Brick"},{e:"🏺", n:"Pot"},{e:"🧹", n:"Broom"},{e:"🧺", n:"Basket"},{e:"🕯️", n:"Candle"},{e:"📎", n:"Clip"},{e:"🔑", n:"Key"},{e:"📦", n:"Box"},{e:"🩹", n:"Bandage"},{e:"🎈", n:"Balloon"},
-            {e:"🥖", n:"Bread"},{e:"🍎", n:"Apple"},{e:"🍙", n:"Rice"},{e:"🍼", n:"Milk"},{e:"🧂", n:"Salt"},{e:"🥄", n:"Spoon"},{e:"🧤", n:"Glove"},{e:"👞", n:"Shoe"},{e:"👒", n:"Hat"},{e:"👕", n:"Shirt"},
-            {e:"🪱", n:"Worm"},{e:"🪴", n:"Plant"},{e:"🐚", n:"Shell"},{e:"🪶", n:"Feather"},{e:"🧶", n:"Yarn"},{e:"🧷", n:"Pin"},{e:"🧦", n:"Sock"},{e:"🧼", n:"Soap"},{e:"🧻", n:"Paper"},{e:"📦", n:"Parcel"},
-            {e:"🪣", n:"Bucket"},{e:"🪑", n:"Chair"},{e:"🥣", n:"Bowl"},{e:"🍴", n:"Fork"},{e:"🏮", n:"Lantern"},{e:"🪞", n:"Mirror"},{e:"🎐", n:"Chime"},{e:"🪆", n:"Doll"},{e:"🪀", n:"Yo-yo"},{e:"🪁", n:"Kite"},
-            {e:"🖌️", n:"Brush"},{e:"🖊️", n:"Pen"},{e:"📏", n:"Ruler"},{e:"📒", n:"Note"},{e:"🔖", n:"Marker"},{e:"🏷️", n:"Tag"},{e:"📪", n:"Mail"},{e:"🔔", n:"Bell"},{e:"📣", n:"Horn"},{e:"🃏", n:"Card"}
+            {e:"🧱", n:"Brick"},{e:"🏺", n:"Pot"},{e:"🧹", n:"Broom"},{e:"🧺", n:"Basket"},{e:"🕯️", n:"Candle"},{e:"📎", n:"Clip"},{e:"🔑", n:"Key"},{e:"🩹", n:"Bandage"},{e:"🎈", n:"Balloon"},{e:"🥖", n:"Bread"},
+            {e:"🍎", n:"Apple"},{e:"🍙", n:"Rice"},{e:"🍼", n:"Milk"},{e:"🧂", n:"Salt"},{e:"🥄", n:"Spoon"},{e:"🧤", n:"Glove"},{e:"👞", n:"Shoe"},{e:"👒", n:"Hat"},{e:"👕", n:"Shirt"},{e:"🪱", n:"Worm"},
+            {e:"🪴", n:"Plant"},{e:"🐚", n:"Shell"},{e:"🪶", n:"Feather"},{e:"🧶", n:"Yarn"},{e:"🧷", n:"Pin"},{e:"🧦", n:"Sock"},{e:"🧼", n:"Soap"},{e:"🧻", n:"Paper"},{e:"🪣", n:"Bucket"},{e:"🪑", n:"Chair"},
         ],
-        "R": [
+        "rare": [
             {e:"🧙", n:"Mage"},{e:"🏇", n:"Knight"},{e:"🧝", n:"Elf"},{e:"🧜", n:"Siren"},{e:"🐺", n:"Wolf"},{e:"🧛", n:"Vampire"},{e:"🦉", n:"Owl"},{e:"🦁", n:"Lion"},{e:"🐻", n:"Bear"},{e:"🦅", n:"Eagle"},
-            {e:"🐗", n:"Boar"},{e:"🦄", n:"Pony"},{e:" foxes", n:"Fox"},{e:"🐼", n:"Panda"},{e:"🐪", n:"Camel"},{e:"🦘", n:"Kangaroo"},{e:"🐆", n:"Leopard"},{e:"🦒", n:"Giraffe"},{e:"🦓", n:"Zebra"},{e:"🐃", n:"Buffalo"},
-            {e:"🦏", n:"Rhino"},{e:"🦛", n:"Hippo"},{e:"🐘", n:"Elephant"},{e:"🦍", n:"Gorilla"},{e:"🐆", n:"Cheetah"},{e:"🦈", n:"Shark"},{e:"🐋", n:"Whale"},{e:"🐬", n:"Dolphin"},{e:"🐊", n:"Croc"},{e:"蠍", n:"Scorpion"},
-            {e:"🏹", n:"Archer"},{e:"🛡️", n:"Guard"},{e:"⚔️", n:"Soldier"},{e:"🔨", n:"Smith"},{e:"🧪", n:"Alchemist"},{e:"📜", n:"Scholar"},{e:"🎻", n:"Bard"},{e:"🍳", n:"Chef"},{e:"🚜", n:"Farmer"},{e:"⛏️", n:"Miner"},
-            {e:"🗡️", n:"Dagger"},{e:"🛡️", n:"Shield"},{e:"⚗️", n:"Flask"},{e:"📡", n:"Dish"},{e:"🛰️", n:"Satellite"},{e:"Compass", n:"Compass"},{e:"🌡️", n:"Meter"},{e:"🔋", n:"Battery"},{e:"🔌", n:"Plug"},{e:"💡", n:"Bulb"},
-            {e:"🧲", n:"Magnet"},{e:"🔭", n:"Scope"},{e:"🩺", n:"Steth"},{e:"🧬", n:"Gene"},{e:"🧪", n:"Tube"},{e:"🧫", n:"Dish"},{e:"🔬", n:"Micro"},{e:"🩻", n:"X-ray"},{e:"📜", n:"Map"},{e:"⚔️", n:"Spear"}
+            {e:"🐗", n:"Boar"},{e:"🦄", n:"Pony"},{e:"FOX", n:"Fox"},{e:"🐼", n:"Panda"},{e:"🐪", n:"Camel"},{e:"🦘", n:"Kangaroo"},{e:"豹", n:"Leopard"},{e:"🦒", n:"Giraffe"},{e:"🦓", n:"Zebra"},{e:"🐃", n:"Buffalo"},
+            {e:"🦏", n:"Rhino"},{e:"🦛", n:"Hippo"},{e:"🐘", n:"Elephant"},{e:"🦈", n:"Shark"},{e:"🐋", n:"Whale"},{e:"🐬", n:"Dolphin"},{e:"🐊", n:"Croc"},{e:"蠍", n:"Scorpion"},
+            {e:"🏹", n:"Archer"},{e:"🛡️", n:"Guard"},{e:"🔨", n:"Smith"},{e:"🧪", n:"Alchemist"},{e:"📜", n:"Scholar"},{e:"🎻", n:"Bard"},{e:"🍳", n:"Chef"},{e:"🚜", n:"Farmer"},{e:"⛏️", n:"Miner"},
+            {e:"🗡️", n:"Dagger"},{e:"⚗️", n:"Flask"},{e:"📡", n:"Dish"},{e:"🛰️", n:"Satellite"},{e:"🧭", n:"Compass"},{e:"🌡️", n:"Meter"},{e:"🔋", n:"Battery"},{e:"🔌", n:"Plug"},{e:"💡", n:"Bulb"},{e:"🧲", n:"Magnet"}
         ],
-        "SR": [
+        "epic": [
             {e:"🤡", n:"Joker"},{e:"🐉", n:"Drake"},{e:"🐙", n:"Kraken"},{e:"🦍", n:"Kong"},{e:"👑", n:"Prince"},{e:"⚡", n:"Spark"},{e:"🔥", n:"Ember"},{e:"❄️", n:"Frost"},{e:"🌪️", n:"Storm"},{e:"☄️", n:"Comet"},
-            {e:"💎", n:"Grit"},{e:"👺", n:"Tengu"},{e:"👹", n:"Ogre"},{e:"👽", n:"Martian"},{e:"🤖", n:"Droid"},{e:"🧜‍♂️", n:"Triton"},{e:"🧞", n:"Genie"},{e:"🧚", n:"Pixie"},{e:"🧛‍♀️", n:"Countess"},{e:"🧟‍♂️", n:"Walker"},
-            {e:"🎭", n:"Phantom"},{e:"🦾", n:"Cyborg"},{e:"🔋", n:"Volt"},{e:"🛰️", n:"Probe"},{e:"🌋", n:"Flare"},{e:"⛓️", n:"Warden"},{e:"🕯️", n:"Medium"},{e:"🧿", n:"Seer"},{e:"⛩️", n:"Monk"},{e:"⚔️", n:"Samurai"},
-            {e:"🧥", n:"Spy"},{e:"🧪", n:"Mutant"},{e:"🔌", n:"Tesla"},{e:"📡", n:"Radar"},{e:"🔭", n:"Watcher"}
+            {e:"💎", n:"Grit"},{e:"👺", n:"Tengu"},{e:"👹", n:"Ogre"},{e:"👽", n:"Martian"},{e:"🤖", n:"Droid"},{e:"🧜‍♂️", n:"Triton"},{e:"🧞", n:"Genie"},{e:"🧚", n:"Pixie"},{e:"🎭", n:"Phantom"},{e:"🦾", n:"Cyborg"}
         ],
-        "SSR": [
-            {e:"🐲", n:"Dragon"},{e:"✨", n:"Holy"},{e:"💫", n:"Cosmo"},{e:"☀️", n:"Solar"},{e:" UFO", n:"UFO"},{e:"🪐", n:"Titan"},{e:"🌋", n:"Magma"},{e:"🌊", n:"Tide"},{e:"🌈", n:"Prism"},{e:"🧠", n:"Mind"},
-            {e:"🔱", n:"Neptune"},{e:"🛡️", n:"Aegis"},{e:"⚔️", n:"Excalibur"},{e:"⛩️", n:"Gate"},{e:"🏮", n:"Lant"},{e:"🧿", n:"Oracle Eye"},{e:"🧬", n:"Genome"},{e:"🧪", n:"Catalyst"},{e:"📡", n:"Cosmic Signal"},{e:"🛰️", n:"Orbiter"}
+        "legend": [
+            {e:"🐲", n:"Dragon"},{e:"✨", n:"Holy"},{e:"💫", n:"Cosmo"},{e:"☀️", n:"Solar"},{e:"🛸", n:"UFO"},{e:"🪐", n:"Titan"},{e:"🌋", n:"Magma"},{e:"🌊", n:"Tide"},{e:"🌈", n:"Prism"},{e:"🧠", n:"Mind"},
+            {e:"🔱", n:"Neptune"},{e:"⚔️", n:"Excalibur"},{e:"⛩️", n:"Gate"},{e:"🧿", n:"Oracle Eye"},{e:"🧬", n:"Genome"}
         ],
-        "LEGEND": [
-            {e:"🔱", n:"Zeus"},{e:"👁️", n:"Oracle"},{e:"🕰️", n:"Chronos"},{e:"♾️", n:"Infinite"},{e:"🌐", n:"World"}
+        "secret": [
+            {e:"⚡️", n:"Zeus"},{e:"👁️", n:"Oracle"},{e:"🕰️", n:"Chronos"},{e:"♾️", n:"Infinite"}
         ],
-        "OG": [
+        "original": [
             {e:"🤥", n:"NET"}
         ]
     };
@@ -219,8 +321,6 @@
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
-
-    camera.add(listener); // Listener to camera
 
     window.addEventListener('resize', () => {
         const w = window.innerWidth, h = window.innerHeight;
@@ -262,43 +362,42 @@
         const hits = raycaster.intersectObjects(slotObjects);
         if (hits.length > 0) {
             const idx = hits[0].object.userData.slotIndex;
-            if (idx < (8 + rebirths * 2)) hoveredIdx = idx; else hoveredIdx = -1;
+            const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+            if (idx < unlocked) hoveredIdx = idx; else hoveredIdx = -1;
         } else { hoveredIdx = -1; }
     }
 
     window.addEventListener('mousedown', (e) => {
-        // Start BGM on first interaction
-        if (!bgmNormal.isPlaying && !isFeverActive) bgmNormal.play();
-        if (isFeverActive && !bgmFever.isPlaying) bgmFever.play();
-
         if(e.target.tagName === 'BUTTON') return;
         raycaster.setFromCamera(mouse, camera);
         for(let g of conveyorGroups){
             if(raycaster.intersectObjects(g.children).length>0){
                 if(g.userData.isBox) {
                     const empty = myItems.indexOf(null);
-                    if(empty === -1 || empty >= (8 + rebirths * 2)) {
-                        showPopup("NO SLOTS LEFT!", "#ff4444");
+                    const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+                    if(empty === -1 || empty >= unlocked) {
+                        showPopup(i18n[currentLang].msgNoSlots, "#ff4444");
                         return;
                     }
                     if(money >= g.userData.cost) {
-                        playClick(); // Sound
                         money -= g.userData.cost;
+                        playClick();
                         scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g);
                         openBox();
                     } return;
                 }
                 const empty = myItems.indexOf(null);
-                const mult = (1 + rebirths);
-                if(money >= g.userData.cost && empty !== -1 && empty < (8 + rebirths * 2)){
-                    playClick(); // Sound
+                const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+                const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
+                if(money >= g.userData.cost && empty !== -1 && empty < unlocked){
                     money -= g.userData.cost; 
+                    playClick();
                     myItems[empty] = {...g.userData, stored:0};
                     const finalVal = (g.userData.val * (g.userData.luckyMult || 1)) * mult;
                     if(!library[g.userData.e] || finalVal > library[g.userData.e].maxVal) {
-                        library[g.userData.e] = { n: g.userData.n, maxVal: finalVal, isLucky: (g.userData.luckyMult > 1) };
+                        library[g.userData.e] = { n: g.userData.n, maxVal: finalVal, isLucky: (g.userData.luckyMult > 1), luckyMult: g.userData.luckyMult };
                     }
-                    if(g.userData.luckyMult > 1) showPopup("LUCKY GET!!", "#00ffff");
+                    if(g.userData.luckyMult > 1) showPopup(i18n[currentLang].msgLucky, "#00ffff");
                     scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g); refresh();
                 } return;
             }
@@ -306,50 +405,26 @@
         const hits = raycaster.intersectObjects(slotObjects);
         if(hits.length>0){
             const idx = hits[0].object.userData.slotIndex;
-            if(idx >= (8 + rebirths * 2)) return;
+            const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+            if(idx >= unlocked) return;
             if(selectedIdx === -1){ if(myItems[idx]) selectedIdx = idx; } 
             else {
                 if(idx === selectedIdx){ 
-                    if(myItems[idx].stored > 0) playClick(); // Sound on collect
+                    if(myItems[idx].stored > 0) playClick();
                     money += myItems[idx].stored; 
                     myItems[idx].stored = 0; 
                     selectedIdx = -1; 
                 } 
-                else { const temp = myItems[idx]; myItems[idx] = myItems[selectedIdx]; myItems[selectedIdx] = temp; selectedIdx = -1; }
+                else { 
+                    const temp = myItems[idx]; 
+                    myItems[idx] = myItems[selectedIdx]; 
+                    myItems[selectedIdx] = temp; 
+                    selectedIdx = -1; 
+                }
             }
             refresh();
         } else { selectedIdx = -1; refresh(); }
     });
-
-    window.collectAll = function() {
-        let total = 0;
-        myItems.forEach(it => { if(it){ total += it.stored; it.stored = 0; } });
-        if(total > 0) { playClick(); money += total; }
-        refresh();
-    };
-
-    window.discardSelected = function() {
-        if(selectedIdx !== -1 && myItems[selectedIdx]) {
-            playClick(); // Sound
-            money += myItems[selectedIdx].cost * 0.5;
-            myItems[selectedIdx] = null;
-            selectedIdx = -1;
-            refresh();
-        }
-    };
-
-    window.rebirth = function() {
-        if(rebirths >= rebirthRequirements.length) return;
-        const reqs = rebirthRequirements[rebirths];
-        const cost = 100000 * Math.pow(10, rebirths);
-        const hasAll = reqs.every(name => myItems.some(it => it && it.n === name));
-        if(money >= cost && hasAll) {
-            playClick(); // Sound
-            money = 500; rebirths++; myItems.fill(null);
-            showPopup(`REBIRTH LEVEL ${rebirths}!!`, "#a335ee");
-            refresh();
-        }
-    };
 
     function spawn() {
         if(!isFeverActive) {
@@ -360,54 +435,43 @@
                 return;
             }
         }
-
         const elapsed = (Date.now() - gameStartTime) / 1000, cycle = elapsed % FEVER_INTERVAL;
         const activeTable = isFeverActive ? feverChances : rarities;
         let isLucky = false;
-
         if(isFeverActive && !luckySpawnedInFever) { 
             const timeLeft = FEVER_DURATION - cycle;
             if(Math.random() < (1.0 / (timeLeft + 1)) || timeLeft < 5) { isLucky = true; luckySpawnedInFever = true; }
         }
-
         let rand = Math.random()*100, cum=0, r=activeTable[0];
         for(let x of activeTable){ cum+=x.chance; if(rand<=cum){ r=x; break; } }
         const list = charData[r.name];
         const d = list[Math.floor(Math.random()*list.length)];
-        
+        if(d.n === "Soccer Ball") { spawn(); return; }
+
         let variance = 0.85 + Math.random() * 0.3;
         let baseVal = Math.floor(r.baseValue * variance);
-        if(r.name === "OG") {
-            baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
-        }
-
-        const finalCost = Math.floor(r.basePrice * (r.name === "OG" ? 1 : variance));
+        if(r.name === "original") baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
+        const finalCost = Math.floor(r.basePrice * (r.name === "original" ? 1 : variance));
         const luckyMult = isLucky ? (2 + Math.floor(Math.random()*49)) : 1;
-
         const g = new THREE.Group(); g.add(createEmoji(d.e));
-        const subTxt = isLucky ? `★LUCKY x${luckyMult}★ $${finalCost.toLocaleString()}` : `[${r.name}] $${finalCost.toLocaleString()} (+$${baseVal}/s)`;
+        const subTxt = isLucky ? `★LUCKY x${luckyMult}★ $${formatValue(finalCost)}` : `[${r.name}] $${formatValue(finalCost)} (+$${formatValue(baseVal)}/s)`;
         const lbl = createLabel(d.n, subTxt, isLucky ? "#00ffff" : r.color, isLucky); 
         lbl.position.y=7; lbl.material.opacity = 1; g.add(lbl);
         g.position.set(-28, 2.5, -55);
-        
         const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(d.n);
         g.userData = { e:d.e, n:d.n, rKey:r.name, cost:finalCost, val:baseVal, luckyMult:luckyMult, offsetY: 0, isRequired };
-        
         if(isRequired) {
-            const ringGeo = new THREE.TorusGeometry(4, 0.2, 16, 100);
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0xa335ee });
-            const ring = new THREE.Mesh(ringGeo, ringMat); ring.rotation.x = Math.PI/2; g.add(ring);
-            const pLight = new THREE.PointLight(0xa335ee, 100, 15); g.add(pLight);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(4, 0.2, 16, 100), new THREE.MeshBasicMaterial({ color: 0xa335ee }));
+            ring.rotation.x = Math.PI/2; g.add(ring);
+            g.add(new THREE.PointLight(0xa335ee, 100, 15));
         }
-
         if(isLucky) {
-            const auraGeo = new THREE.TorusGeometry(3.5, 0.15, 8, 50);
-            const auraMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 });
-            const aura = new THREE.Mesh(auraGeo, auraMat); aura.rotation.x = Math.PI/2; g.add(aura);
+            const aura = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.15, 8, 50), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 }));
+            aura.rotation.x = Math.PI/2; g.add(aura);
             g.userData.isLuckyEffect = true;
             showPopup("LUCKY INBOUND!", "#00ffff");
-        } else if(r.name === "SSR" || r.name === "LEGEND" || r.name === "OG") {
-            const pLight = new THREE.PointLight(r.color, 50, 20); g.add(pLight);
+        } else if(r.name === "legend" || r.name === "secret" || r.name === "original") {
+            g.add(new THREE.PointLight(r.color, 50, 20));
             const beam = new THREE.Mesh(new THREE.CylinderGeometry(1, 2, 50, 16, 1, true), new THREE.MeshBasicMaterial({ color: r.color, transparent: true, opacity: 0.3, side: THREE.DoubleSide }));
             beam.position.y = 20; g.add(beam); showPopup(`!! ${r.name} !!`, r.color);
         }
@@ -417,12 +481,11 @@
     function spawnBox() {
         const cost = 100 + Math.floor(Math.random() * 99901);
         const g = new THREE.Group(); g.add(createEmoji("📦"));
-        const lbl = createLabel("SECRET BOX", `Buy for $${cost.toLocaleString()}?`, "#00ffff", true);
+        const lbl = createLabel("SECRET BOX", `Buy for $${formatValue(cost)}?`, "#00ffff", true);
         lbl.position.y = 7; lbl.material.opacity = 1; g.add(lbl);
         g.position.set(-28, 2.5, -55);
         g.userData = { isBox: true, cost: cost, offsetY: 0, isLuckyEffect: true };
-        
-        const pLight = new THREE.PointLight(0x00ffff, 100, 15); g.add(pLight);
+        g.add(new THREE.PointLight(0x00ffff, 100, 15));
         scene.add(g); conveyorGroups.push(g);
         showPopup("SECRET BOX INBOUND!", "#00ffff");
     }
@@ -436,81 +499,108 @@
                 const char = charData[rk].find(c => c.n === targetName);
                 if(char) { foundData = char; foundRar = rk; break; }
             }
-            if(foundData) {
-                giveChar(foundRar, 1, targetName); 
-                showPopup("✨ REBIRTH HELPER !!", "#a335ee");
-                return;
-            }
+            if(foundData) { giveChar(foundRar, 1, targetName); showPopup("✨ REBIRTH HELPER !!", "#a335ee"); return; }
         }
         const r = Math.random() * 100;
-        if(r < 40) { money += 5000; showPopup("+ $5,000 !!", "#0f8");
-        } else if(r < 60) { gameStartTime = Date.now() - (FEVER_INTERVAL * 1000); showPopup("🔥 FEVER STARTED !!", "#ffeb3b");
-        } else if(r < 80) { giveChar("SR", 1);
-        } else if(r < 88) { money *= 10; showPopup("💰 CASH x10 !!", "#ffeb3b");
-        } else if(r < 94) { giveChar("SSR", 1);
-        } else if(r < 98) { giveChar("LEGEND", 1);
-        } else { giveChar("OG", 1); }
+        if(r < 40) { money += 5000; showPopup("+ $5,000 !!", "#0f8"); }
+        else if(r < 60) { gameStartTime = Date.now() - (FEVER_INTERVAL * 1000); showPopup(i18n[currentLang].msgFever, "#ffeb3b"); }
+        else if(r < 80) { giveChar("epic", 1); }
+        else if(r < 88) { money *= 10; showPopup("💰 CASH x10 !!", "#ffeb3b"); }
+        else if(r < 94) { giveChar("legend", 1); }
+        else { giveChar("secret", 1); } 
     }
 
     function giveChar(rarName, luckyM, specificName = null) {
         const empty = myItems.indexOf(null);
-        if(empty === -1 || empty >= (8 + rebirths * 2)) {
-            showPopup("NO EMPTY SLOTS!", "#ff4444");
-            return;
-        }
+        const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+        if(empty === -1 || empty >= unlocked) { showPopup(i18n[currentLang].msgNoSlots, "#ff4444"); return; }
         const list = charData[rarName];
         const d = specificName ? list.find(c => c.n === specificName) : list[Math.floor(Math.random()*list.length)];
         const rar = rarities.find(x => x.name === rarName);
-        
         let baseVal = Math.floor(rar.baseValue);
-        if(rarName === "OG") {
-            baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
-        }
-
-        myItems[empty] = { e:d.e, n:d.n, rKey:rarName, cost:rar.basePrice, val:baseVal, luckyMult:luckyM, stored:0 };
-        const finalVal = (baseVal * luckyM) * (1 + rebirths);
-        if(!library[d.e] || finalVal > library[d.e].maxVal) {
-            library[d.e] = { n: d.n, maxVal: finalVal, isLucky: (luckyM > 1) };
-        }
-        showPopup(`GOT ${rarName} !!`, rar.color);
-        refresh();
+        if(specificName === "Soccer Ball") baseVal = 1;
+        if(rarName === "original") baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
+        
+        myItems[empty] = { 
+            e:d.e, n:d.n, rKey:rarName, 
+            cost: (specificName === "Soccer Ball" ? 0 : rar.basePrice), 
+            val:baseVal, luckyMult:luckyM, stored:0 
+        };
+        const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
+        const finalVal = (baseVal * luckyM) * mult;
+        if(!library[d.e] || finalVal > library[d.e].maxVal) library[d.e] = { n: d.n, maxVal: finalVal, isLucky: (luckyM > 1), luckyMult: luckyM };
+        showPopup(`GOT ${d.n} !!`, rar.color); refresh();
     }
 
     function refresh() {
-        const unlocked = Math.min(16, 8 + rebirths * 2);
-        const mult = (1 + rebirths);
+        const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+        const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
+        
         slotObjects.forEach((s, i) => {
             if (i >= unlocked) s.material.color.setHex(0x050505);
             else if (selectedIdx === i) s.material.color.setHex(0x00ff88);
             else if (myItems[i]) s.material.color.set(myItems[i].luckyMult > 1 ? "#00ffff" : rarities.find(rar => rar.name === myItems[i].rKey).color);
             else s.material.color.setHex(0x222222);
         });
+
         myItems.forEach((it, i) => {
-            if(charInSlots[i]){ scene.remove(charInSlots[i]); charInSlots[i] = null; }
-            if(it){
-                const g = new THREE.Group(); g.add(createEmoji(it.e));
-                const isL = it.luckyMult > 1;
-                const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(it.n);
-                const pps = (it.val * it.luckyMult) * mult;
-                const rarColor = rarities.find(r=>r.name===it.rKey).color;
-                const lbl = createLabel(it.n, `${isL ? '★LUCKY★ ' : ''}+$${pps.toLocaleString()}/s`, isL ? "#00ffff" : rarColor, isL);
-                lbl.position.y=7; g.add(lbl); g.position.copy(slotObjects[i].position); g.position.y=4;
-                g.userData.isRequired = isRequired;
-                if(isRequired) {
-                    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.15, 16, 100), new THREE.MeshBasicMaterial({ color: 0xa335ee }));
-                    ring.rotation.x = Math.PI/2; g.add(ring);
-                    const pLight = new THREE.PointLight(0xa335ee, 50, 10); g.add(pLight);
+            const identity = it ? `${it.n}_${it.luckyMult}` : null;
+            if (charIdentity[i] !== identity) {
+                if (charInSlots[i]) {
+                    scene.remove(charInSlots[i]);
+                    charInSlots[i] = null;
                 }
-                if(isL) {
-                    const aura = new THREE.Mesh(new THREE.TorusGeometry(3,0.1,8,32), new THREE.MeshBasicMaterial({color:0x00ffff, transparent:true, opacity:0.4}));
-                    aura.rotation.x=Math.PI/2; aura.position.y = -0.5; g.add(aura); g.userData.isLuckyEffect = true;
+                if (it) {
+                    const g = new THREE.Group();
+                    g.add(createEmoji(it.e));
+                    const isL = it.luckyMult > 1;
+                    const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(it.n);
+                    const pps = (it.val * it.luckyMult) * mult;
+                    const rarColor = rarities.find(r => r.name === it.rKey).color;
+                    const lbl = createLabel(it.n, `${isL ? '★LUCKY★ ' : ''}+$${formatValue(pps)}/s`, isL ? "#00ffff" : rarColor, isL);
+                    lbl.position.y = 7; g.add(lbl);
+                    g.position.copy(slotObjects[i].position);
+                    g.position.y = 4;
+                    g.userData.isRequired = isRequired;
+                    if (isRequired) {
+                        const ring = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.15, 16, 100), new THREE.MeshBasicMaterial({ color: 0xa335ee }));
+                        ring.rotation.x = Math.PI / 2; g.add(ring);
+                        g.add(new THREE.PointLight(0xa335ee, 50, 10));
+                    }
+                    if (isL) {
+                        const aura = new THREE.Mesh(new THREE.TorusGeometry(3, 0.1, 8, 32), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.4 }));
+                        aura.rotation.x = Math.PI / 2; aura.position.y = -0.5; g.add(aura);
+                        g.userData.isLuckyEffect = true;
+                    }
+                    scene.add(g);
+                    charInSlots[i] = g;
                 }
-                scene.add(g); charInSlots[i] = g;
+                charIdentity[i] = identity;
             }
         });
-        document.getElementById('discard-btn').style.display = (selectedIdx !== -1 && myItems[selectedIdx]) ? 'block' : 'none';
-        document.getElementById('rebirth-lv').innerText = rebirths;
         
+        const L = i18n[currentLang];
+        document.getElementById('btn-archive').innerText = L.archive;
+        document.getElementById('btn-shop').innerText = L.shop;
+        document.getElementById('btn-stats').innerText = L.stats;
+        document.getElementById('btn-lang').innerText = L.lang;
+        document.getElementById('btn-full').innerText = L.full;
+        document.getElementById('btn-reset').innerText = L.reset;
+        document.getElementById('txt-cash').innerText = L.cash;
+        document.getElementById('txt-rebirth-label').innerText = L.rebirth;
+        document.getElementById('txt-collect').innerText = L.collect;
+        document.getElementById('txt-lib-title').innerText = L.libTitle;
+        document.getElementById('txt-shop-title').innerText = L.shopTitle;
+        document.getElementById('txt-stats-title').innerText = L.statsTitle;
+        document.getElementById('txt-spawn-prob').innerText = L.spawnProb;
+        document.getElementById('txt-fever-prob').innerText = L.feverProb;
+        document.getElementById('txt-box-prob').innerText = L.boxProb;
+        document.getElementById('txt-rebirth-btn').innerText = L.rebirth;
+        document.querySelectorAll('.btn-close-ui').forEach(b => b.innerText = L.close);
+        document.getElementById('discard-btn').innerText = L.discard;
+
+        document.getElementById('discard-btn').style.display = (selectedIdx !== -1 && myItems[selectedIdx]) ? 'block' : 'none';
+        document.getElementById('rebirth-lv').innerText = (rebirths >= 6) ? "MAX" : rebirths;
         const reqArea = document.getElementById('rebirth-char-cond');
         if(rebirths < rebirthRequirements.length) {
             const reqs = rebirthRequirements[rebirths];
@@ -518,11 +608,8 @@
                 const has = myItems.some(it => it && it.n === name);
                 return `<span style="color:${has ? '#0f8' : '#ff4444'}">${has ? '✅' : '❌'}${name}</span>`;
             }).join(" ");
-            reqArea.innerHTML = `Required: ${status}`;
-            document.getElementById('rebirth-cond').innerText = `Cost: $${(100000 * Math.pow(10, rebirths)).toLocaleString()}`;
-            const canAfford = money >= (100000 * Math.pow(10, rebirths)) && reqs.every(n => myItems.some(it => it && it.n === n));
-            document.getElementById('rebirth-btn').className = canAfford ? "available" : "locked";
-        } else { reqArea.innerText = "MAX REBIRTH REACHED"; document.getElementById('rebirth-btn').className = "locked"; }
+            reqArea.innerHTML = `${L.required}: ${status}`;
+        } else { reqArea.innerText = L.maxRebirth; }
         save();
     }
 
@@ -535,29 +622,16 @@
     function createLabel(t1, t2, color, isLucky){
         const canvas = document.createElement('canvas'); canvas.width=600; canvas.height=200;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle="rgba(0,0,0,0.85)"; ctx.strokeStyle=color; ctx.lineWidth=10; 
-        ctx.beginPath(); ctx.roundRect(5,5,590,190,20); ctx.fill(); ctx.stroke();
+        ctx.fillStyle="rgba(0,0,0,0.85)"; ctx.strokeStyle=color; ctx.lineWidth=10; ctx.roundRect(5,5,590,190,20); ctx.fill(); ctx.stroke();
         ctx.fillStyle="white"; ctx.textAlign="center"; ctx.font="bold 45px Arial"; ctx.fillText(t1, 300, 80);
         ctx.fillStyle=color; ctx.font="bold 35px Arial"; ctx.fillText(t2, 300, 150);
         const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas), transparent:true, opacity: 0}));
-        sp.scale.set(9,3,1); 
-        if(isLucky) sp.userData = { canvas, ctx, t1, t2 };
-        return sp;
-    }
-    function updateRainbowLabel(sp, color) {
-        const { canvas, ctx, t1, t2 } = sp.userData;
-        ctx.clearRect(0,0,600,200);
-        ctx.fillStyle="rgba(0,0,0,0.85)"; ctx.strokeStyle=color; ctx.lineWidth=10;
-        ctx.beginPath(); ctx.roundRect(5,5,590,190,20); ctx.fill(); ctx.stroke();
-        ctx.fillStyle="white"; ctx.textAlign="center"; ctx.font="bold 45px Arial"; ctx.fillText(t1, 300, 80);
-        ctx.fillStyle=color; ctx.font="bold 35px Arial"; ctx.fillText(t2, 300, 150);
-        sp.material.map.needsUpdate = true;
+        sp.scale.set(9,3,1); if(isLucky) sp.userData = { canvas, ctx, t1, t2 }; return sp;
     }
 
     function animate(t) {
         requestAnimationFrame(animate);
         const rainbow = `hsl(${t % 360}, 100%, 70%)`;
-        
         conveyorGroups.forEach((g,i)=>{ 
             g.position.z += 0.1; if(g.position.z > 50){ scene.remove(g); conveyorGroups.splice(i,1); return; }
             const isH = (hoveredConveyorId === g.uuid);
@@ -570,12 +644,10 @@
             g.userData.offsetY += ((isH ? 3.0 : 0) - g.userData.offsetY) * 0.15;
             g.children[0].position.y = g.userData.offsetY + bounce;
             g.children[1].position.y = 8 + g.userData.offsetY + bounce;
-            if(g.userData.isLuckyEffect && g.children[1].userData && g.children[1].userData.canvas) { 
-                updateRainbowLabel(g.children[1], rainbow);
-            }
+            if(g.userData.isLuckyEffect && g.children[1].material.map) updateRainbowLabel(g.children[1], rainbow);
         });
-        
-        const mult = (1 + rebirths), isTick = (t - lastIncomeTick >= 1000);
+        const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
+        const isTick = (t - lastIncomeTick >= 1000);
         let pending = 0, currentPPS = 0;
         charInSlots.forEach((g,i)=>{
             if(g && myItems[i]){
@@ -590,90 +662,203 @@
                 }
                 g.position.y += ((4 + (isH || isS ? 2 : 0) + bounce) - g.position.y) * 0.15;
                 g.children[1].material.opacity += ((isH || isS ? 1 : 0) - g.children[1].material.opacity) * 0.15;
-                if(g.userData.isLuckyEffect && g.children[1].userData && g.children[1].userData.canvas) {
-                    updateRainbowLabel(g.children[1], rainbow);
-                }
+                if(g.userData.isLuckyEffect && g.children[1].material.map) updateRainbowLabel(g.children[1], rainbow);
             }
         });
-
         const now = Date.now();
         const elapsed = (now - gameStartTime) / 1000, cycle = elapsed % FEVER_INTERVAL;
         const fTimer = document.getElementById('fever-timer');
+        const L = i18n[currentLang];
         if (cycle < FEVER_DURATION) {
-            if(!isFeverActive) { 
-                isFeverActive = true; 
-                luckySpawnedInFever = false; 
-                showPopup("🔥 FEVER!!", "#ffeb3b"); 
-                updateBGM(true); // Switch to Fever BGM
-            }
+            if(!isFeverActive) { isFeverActive = true; luckySpawnedInFever = false; showPopup(L.msgFever, "#ffeb3b"); }
             fTimer.innerText = `🔥 FEVER: ${Math.ceil(FEVER_DURATION - cycle)}s`;
             fTimer.style.color = "#ffeb3b";
             document.getElementById('fever-overlay').style.display = 'block';
-            scene.background.lerp(new THREE.Color(0x330011), 0.05);
+            scene.background.lerp(new THREE.Color(0x330011), 0.05); 
         } else {
-            if(isFeverActive) {
-                isFeverActive = false;
-                updateBGM(false); // Switch back to Normal BGM
-            }
+            isFeverActive = false;
             const next = Math.ceil(FEVER_INTERVAL - cycle);
-            fTimer.innerText = `Next Fever: ${Math.floor(next/60)}:${(next%60).toString().padStart(2,'0')}`;
+            fTimer.innerText = `${L.nextFever}: ${Math.floor(next/60)}:${(next%60).toString().padStart(2,'0')}`;
             fTimer.style.color = "#888";
             document.getElementById('fever-overlay').style.display = 'none';
-            scene.background.lerp(new THREE.Color(0x020205), 0.05);
+            const targetColor = new THREE.Color((shopItems.find(x => x.id === currentDecor) || { color: 0x020205 }).color);
+            scene.background.lerp(targetColor, 0.05);
         }
-
-        document.getElementById('box-timer').innerText = `Secret Box: ${normalSpawnCount} / 20`;
+        document.getElementById('box-timer').innerText = `${L.secretBox}: ${normalSpawnCount} / 20`;
         if(isTick) lastIncomeTick = t;
-        document.getElementById('money').innerText = Math.floor(money).toLocaleString();
-        document.getElementById('pps').innerText = Math.floor(currentPPS).toLocaleString();
-        document.getElementById('pending-sum').innerText = `$${Math.floor(pending).toLocaleString()}`;
+        document.getElementById('money').innerText = formatValue(money);
+        document.getElementById('pps').innerText = formatValue(currentPPS);
+        document.getElementById('pending-sum').innerText = `$${formatValue(pending)}`;
+        const rebirthCost = Math.pow(10, rebirths+5);
+        document.getElementById('rebirth-cond').innerText = (rebirths >= 6) ? L.maxRebirth : `Next Rebirth: $${formatValue(rebirthCost)}`;
+        let canR = (rebirths < 6) && (money >= rebirthCost) && (rebirths < rebirthRequirements.length) && rebirthRequirements[rebirths].every(name => myItems.some(it => it && it.n === name));
+        document.getElementById('rebirth-btn').className = canR ? 'available' : 'locked';
+        document.getElementById('rebirth-btn').disabled = !canR;
+        if(t - lastS > (isFeverActive ? 1500 : 3500)){ spawn(); lastS=t; }
         renderer.render(scene, camera);
-    }
-
-    function showPopup(txt, color) {
-        const m = document.getElementById('msg'); m.innerText = txt; m.style.color = color; m.style.opacity = 1;
-        setTimeout(()=> m.style.opacity = 0, 1500);
-    }
-
-    function save() {
-        localStorage.setItem('cosmic_save_v2', JSON.stringify({money, rebirths, library, myItems, time: Date.now() - gameStartTime}));
-    }
-    function load() {
-        const s = localStorage.getItem('cosmic_save_v2');
-        if(s){
-            const d = JSON.parse(s); money = d.money; rebirths = d.rebirths; library = d.library; myItems = d.myItems; gameStartTime = Date.now() - d.time;
-            refresh();
+        
+        if(document.getElementById('shop-window').style.display === 'flex') {
+            const buttons = document.querySelectorAll('.shop-buy-btn:not(.bought):not(.free-btn)');
+            buttons.forEach(btn => {
+                const costAttr = btn.getAttribute('data-cost');
+                if(costAttr) {
+                    const cost = parseInt(costAttr);
+                    if(money < cost) { btn.classList.add('locked'); btn.disabled = true; }
+                    else { btn.classList.remove('locked'); btn.disabled = false; }
+                }
+            });
         }
     }
 
-    window.toggleSettings = () => { const s = document.getElementById('settings-menu').style; s.display = s.display === 'flex' ? 'none' : 'flex'; };
-    window.toggleFullscreen = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
-    window.toggleLib = () => {
-        const w = document.getElementById('lib-window');
-        const isD = w.style.display === 'flex';
-        w.style.display = isD ? 'none' : 'flex';
-        if(!isD){
-            const g = document.getElementById('lib-grid'); g.innerHTML = "";
-            let total = 0;
-            for(let rk in charData) {
-                charData[rk].forEach(c => {
-                    total++;
-                    const entry = library[c.e];
-                    const div = document.createElement('div');
-                    div.style = `background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; border: 1px solid ${entry ? (entry.isLucky ? '#00ffff' : '#444') : '#222'}`;
-                    div.innerHTML = `<div style="font-size:2rem; filter: grayscale(${entry?0:1})">${c.e}</div>
-                                     <div style="font-size:0.7rem; color:${entry?'#fff':'#444'}">${c.n}</div>
-                                     <div style="font-size:0.6rem; color:var(--gold)">${entry?'Max: $'+Math.floor(entry.maxVal):'???'}</div>`;
-                    g.appendChild(div);
-                });
-            }
-        }
+    function updateRainbowLabel(sp, color) {
+        if(!sp.userData.canvas) return;
+        const { canvas, ctx, t1, t2 } = sp.userData;
+        ctx.clearRect(0, 0, 600, 200);
+        ctx.fillStyle="rgba(0,0,0,0.85)"; ctx.strokeStyle=color; ctx.lineWidth=10; ctx.roundRect(5,5,590,190,20); ctx.fill(); ctx.stroke();
+        ctx.fillStyle="white"; ctx.textAlign="center"; ctx.font="bold 45px Arial"; ctx.fillText(t1, 300, 80);
+        ctx.fillStyle=color; ctx.font="bold 35px Arial"; ctx.fillText(t2, 300, 150);
+        sp.material.map.needsUpdate = true;
+    }
+
+    function applyDecor(id) {
+        currentDecor = id;
+    }
+
+    window.buyDecor = (id, cost) => {
+        if (money >= cost) {
+            money -= cost; ownedDecor.push(id); playClick(); showPopup("PURCHASED!", "#ffeb3b"); renderShop(); refresh();
+        } else { showPopup("NOT ENOUGH CASH!", "#ff4444"); }
     };
-    window.resetGame = () => { if(confirm("RESET ALL PROGRESS?")){ localStorage.removeItem('cosmic_save_v2'); location.reload(); } };
 
-    setInterval(spawn, 3000);
-    load();
-    animate(0);
+    window.useDecor = (id) => { applyDecor(id); playClick(); renderShop(); save(); };
+
+    window.toggleSettings = () => { const m = document.getElementById('settings-menu'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
+    window.toggleFullscreen = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); toggleSettings(); };
+    window.resetGame = () => { if(confirm("RESET ALL?")) { localStorage.clear(); location.reload(); } };
+    window.discardSelected = () => { if(selectedIdx !== -1 && myItems[selectedIdx]) { playClick(); money += Math.floor(myItems[selectedIdx].cost / 2); myItems[selectedIdx] = null; selectedIdx = -1; refresh(); showPopup(i18n[currentLang].msgSold, "#ff4444"); } };
+    window.rebirth = () => { const cost = Math.pow(10, rebirths+5); if(money >= cost) { playClick(); money = 1000; rebirths++; myItems.fill(null); refresh(); showPopup("DIMENSION UP!", "#a335ee"); } };
+    window.collectAll = () => { 
+        let earned = 0;
+        myItems.forEach(it=>{ if(it && it.stored > 0){ earned += it.stored; money+=it.stored; it.stored=0; } }); 
+        if(earned > 0) playClick(); refresh(); 
+    };
+
+    window.getFreeBall = () => {
+        giveChar("normal", 1, "Soccer Ball");
+        showPopup("RESCUE BALL!", "#0f8");
+    };
+
+    window.toggleLanguage = () => {
+        currentLang = currentLang === 'en' ? 'jp' : 'en';
+        playClick();
+        refresh();
+        if(document.getElementById('stats-window').style.display === 'flex') renderStats();
+    };
+
+    window.toggleStats = () => {
+        const w = document.getElementById('stats-window');
+        w.style.display = w.style.display==='flex'?'none':'flex';
+        if(w.style.display==='flex') renderStats();
+    };
+
+    function renderStats() {
+        const L = i18n[currentLang];
+        const tableSpawn = document.getElementById('table-spawn');
+        tableSpawn.innerHTML = `<tr><th>${L.rarity}</th><th>${L.chance}</th></tr>`;
+        rarities.forEach(r => {
+            tableSpawn.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`;
+        });
+
+        const tableFever = document.getElementById('table-fever');
+        tableFever.innerHTML = `<tr><th>${L.rarity}</th><th>${L.chance}</th></tr>`;
+        feverChances.forEach(r => {
+            tableFever.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`;
+        });
+
+        const tableBox = document.getElementById('table-box');
+        tableBox.innerHTML = `<tr><th>${L.item}</th><th>${L.chance}</th></tr>`;
+        const boxContents = [
+            { n: "+$5,000 Cash", p: "40%" },
+            { n: "Instant Fever", p: "20%" },
+            { n: "Epic Character", p: "20%" },
+            { n: "Cash x10", p: "8%" },
+            { n: "Legend Character", p: "6%" },
+            { n: "Secret Character", p: "6%" },
+            { n: "✨ Rebirth Helper", p: "5% (Special)" }
+        ];
+        boxContents.forEach(c => {
+            tableBox.innerHTML += `<tr><td>${c.n}</td><td>${c.p}</td></tr>`;
+        });
+    }
+
+    function renderLib() {
+        const grid = document.getElementById('lib-grid'); grid.innerHTML='';
+        rarities.forEach(rar => {
+            charData[rar.name].forEach(d => {
+                const found = library[d.e];
+                const div = document.createElement('div');
+                const cardClass = (found && found.isLucky) ? 'rainbow-card' : '';
+                const borderColor = found ? (found.isLucky ? 'transparent' : rar.color) : '#333';
+                const bgColor = found ? (found.isLucky ? 'transparent' : rar.color + '4D') : 'rgba(255,255,255,0.03)';
+
+                div.className = cardClass;
+                div.style.cssText = `background: ${bgColor}; aspect-ratio:1/1.2; border-radius:15px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:0.3vh solid ${borderColor}; position:relative; transition: 0.3s;`;
+                
+                // 倍率表記 (xXX) を追加
+                const luckyTag = (found && found.isLucky && found.luckyMult) ? `<div style="font-size:0.7rem; color:#fff; position:absolute; bottom:0.5vh; right:0.8vh; font-weight:bold; background:rgba(0,0,0,0.5); padding:2px 5px; border-radius:5px;">x${found.luckyMult}</div>` : '';
+
+                div.innerHTML = `
+                    <div style="font-size:0.8rem; color:${found && found.isLucky ? '#fff' : (found ? '#fff' : rar.color)}; position:absolute; top:0.8vh; font-weight:bold;">${rar.name.toUpperCase()}${found && found.isLucky ? ' ★' : ''}</div>
+                    <div style="font-size:3.5vh; filter:brightness(${found ? 1 : 0});">${d.e}</div>
+                    <div style="font-size:0.8rem; color:#fff; font-weight:bold; margin-top:0.5vh;">${found ? d.n : '???'}</div>
+                    <div style="font-size:0.7rem; color:${found && found.isLucky ? '#fff' : 'var(--gold)'}; margin-top:0.3vh;">${found ? '$'+formatValue(found.maxVal)+'/s' : '---'}</div>
+                    ${luckyTag}
+                `;
+                grid.appendChild(div);
+            });
+        });
+    }
+
+    function renderShop() {
+        const grid = document.getElementById('shop-grid'); grid.innerHTML = '';
+        const ballDiv = document.createElement('div'); ballDiv.className = 'shop-item';
+        ballDiv.style.borderColor = 'var(--neon)';
+        ballDiv.innerHTML = `
+            <div style="font-size:3vh; margin-bottom:0.5vh;">⚽</div>
+            <h3 style="font-size:1rem; margin:0.5vh 0; color:var(--neon);">Soccer Ball</h3>
+            <p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">Rescue: $1/s<br>FREE FOREVER</p>
+            <button class="shop-buy-btn free-btn" style="background:var(--neon);" onclick="getFreeBall()">FREE GET</button>
+        `;
+        grid.appendChild(ballDiv);
+
+        const defDiv = document.createElement('div'); defDiv.className = 'shop-item';
+        defDiv.innerHTML = `<h3>Normal Space</h3><p>Default</p><button class="shop-buy-btn ${currentDecor==='default'?'bought':''}" onclick="useDecor('default')">${currentDecor==='default'?'ACTIVE':'USE'}</button>`;
+        grid.appendChild(defDiv);
+
+        shopItems.forEach(item => {
+            const isOwned = ownedDecor.includes(item.id);
+            const canAfford = money >= item.cost;
+            const div = document.createElement('div'); div.className = 'shop-item';
+            div.innerHTML = `
+                <div style="width:100%; height:4vh; background-color:#${item.color.toString(16).padStart(6,'0')}; border-radius:1vh; margin-bottom:1vh;"></div>
+                <h3 style="font-size:1rem; margin:0.5vh 0;">${item.name}</h3>
+                <p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">${item.desc}</p>
+                ${isOwned ? 
+                    `<button class="shop-buy-btn ${currentDecor===item.id?'bought':''}" onclick="useDecor('${item.id}')">${currentDecor===item.id?'ACTIVE':'USE'}</button>` :
+                    `<button class="shop-buy-btn ${!canAfford?'locked':''}" data-cost="${item.cost}" ${!canAfford?'disabled':''} onclick="buyDecor('${item.id}', ${item.cost})">$${formatValue(item.cost)}</button>`
+                }
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    window.toggleLib = () => { const w = document.getElementById('lib-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderLib(); };
+    window.toggleShop = () => { const w = document.getElementById('shop-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderShop(); };
+    function showPopup(t, c){ const e=document.getElementById('msg'); e.innerText=t; e.style.color=c; e.style.opacity=1; setTimeout(()=>e.style.opacity=0,1500); }
+    function save(){ localStorage.setItem('tycoon_save_v24', JSON.stringify({money, rebirths, myItems, library, gameStartTime, normalSpawnCount, ownedDecor, currentDecor, currentLang})); }
+    function load(){ const d=JSON.parse(localStorage.getItem('tycoon_save_v24')); if(d){ money=d.money; rebirths=d.rebirths; myItems=d.myItems; library=d.library||{}; gameStartTime=d.gameStartTime||Date.now(); normalSpawnCount=d.normalSpawnCount||0; ownedDecor=d.ownedDecor||["default"]; currentDecor=d.currentDecor||"default"; currentLang=d.currentLang||"en"; } refresh(); }
+
+    load(); animate(0);
 </script>
 </body>
 </html>
