@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Cosmic Tycoon - Rebirth Helper Edition</title>
+    <style>
+        :root { --neon: #0f8; --accent: #a335ee; --gold: #ffeb3b; --gray: #444; --danger: #ff4444; --bg: rgba(5,5,15,0.95); --lucky: #00ffff; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
+        #gui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; color: white; z-index: 100; }
+        
+        .hud { 
+            position: absolute; top: 20px; left: 20px; 
+            background: rgba(0,10,20,0.9); padding: 20px; border-left: 5px solid var(--neon); 
+            pointer-events: auto; border-radius: 0 20px 20px 0; min-width: 260px;
+        }
+        .hud-value { font-size: 1.8rem; font-weight: 900; }
+        #fever-timer { font-size: 1rem; margin-top: 10px; font-weight: bold; }
+        #box-timer { font-size: 0.9rem; margin-top: 5px; color: var(--lucky); font-weight: bold; }
+
+        .top-right-area { position: absolute; top: 20px; right: 20px; pointer-events: auto; }
+        #settings-toggle { 
+            background: #222; color: white; border: 2px solid #444; width: 60px; height: 60px; 
+            border-radius: 15px; cursor: pointer; font-size: 1.5rem; transition: 0.3s;
+        }
+        #settings-menu {
+            position: absolute; top: 70px; right: 0; background: var(--bg); border: 2px solid var(--accent);
+            padding: 20px; border-radius: 20px; display: none; flex-direction: column; gap: 15px; min-width: 200px;
+        }
+        .menu-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; color: white; }
+        
+        #discard-btn {
+            position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(#ff4444, #990000); color: white;
+            border: 3px solid white; padding: 15px 50px; font-size: 1.5rem; font-weight: 900;
+            border-radius: 50px; cursor: pointer; pointer-events: auto; display: none; z-index: 200;
+        }
+
+        .collect-area { position: absolute; right: 40px; bottom: 40px; pointer-events: auto; }
+        #collect-all-btn { 
+            background: radial-gradient(circle, var(--gold), #f9a825);
+            border: 4px solid #fff; width: 160px; height: 160px; 
+            font-size: 1.5rem; font-weight: 900; color: #331a00; cursor: pointer; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); pointer-events: auto; text-align: center; }
+        #rebirth-btn { padding: 15px 40px; font-size: 1.5rem; font-weight: 900; border-radius: 15px; border: none; transition: 0.3s; }
+        #rebirth-btn.available { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); cursor: pointer; }
+        #rebirth-btn.locked { background: var(--gray); color: #888; cursor: not-allowed; opacity: 0.6; }
+        
+        #lib-window { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 75%; background: var(--bg); border: 2px solid var(--accent); display: none; flex-direction: column; padding: 30px; border-radius: 30px; pointer-events: auto; z-index: 500; }
+        #lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; overflow-y: auto; padding: 10px; }
+        
+        #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: 900; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 300; text-shadow: 0 0 20px #fff; }
+        
+        .fever-active-ui { animation: fever-pulse 1s infinite; pointer-events: none; position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 50; display: none; }
+        @keyframes fever-pulse {
+            0% { box-shadow: inset 0 0 100px rgba(255,0,0,0.2); }
+            50% { box-shadow: inset 0 0 200px rgba(255,200,0,0.4); }
+            100% { box-shadow: inset 0 0 100px rgba(255,0,0,0.2); }
+        }
+        @keyframes rainbow-border {
+            0% { border-color: #ff0000; }
+            33% { border-color: #00ff00; }
+            66% { border-color: #0000ff; }
+            100% { border-color: #ff0000; }
+        }
+        .rainbow-frame { animation: rainbow-border 3s linear infinite; border-width: 3px !important; }
+    </style>
+</head>
+<body>
+
+<div id="fever-overlay" class="fever-active-ui"></div>
+
+<div id="gui-layer">
+    <div class="top-right-area">
+        <button id="settings-toggle" onclick="toggleSettings()">⚙</button>
+        <div id="settings-menu">
+            <button class="menu-btn" style="background:var(--accent)" onclick="toggleLib()">📖 ARCHIVE</button>
+            <button class="menu-btn" style="background:#333" onclick="toggleFullscreen()">🖥 FULLSCREEN</button>
+            <button class="menu-btn" style="background:transparent; color:red; border:1px solid red; font-size:0.7rem;" onclick="resetGame()">⚠ RESET</button>
+        </div>
+    </div>
+
+    <div class="hud">
+        <div style="color:var(--gold)">CASH: <span class="hud-value">$<span id="money">0</span></span></div>
+        <div style="color:var(--neon)">PPS: <span class="hud-value">$<span id="pps">0</span>/s</span></div>
+        <div style="color:var(--accent)">REBIRTH: <span class="hud-value">Lv.<span id="rebirth-lv">0</span></span></div>
+        <div id="box-timer">Secret Box: 0 / 20</div>
+        <div id="fever-timer">Next Fever: --:--</div>
+    </div>
+
+    <button id="discard-btn" onclick="window.discardSelected()">🗑️ DISCARD FOR 50%</button>
+
+    <div id="lib-window">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
+            <div style="color:var(--gold); font-size:1.5rem; font-weight:bold;">COLLECTION (Total 201)</div>
+            <button onclick="toggleLib()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">CLOSE</button>
+        </div>
+        <div id="lib-grid"></div>
+    </div>
+
+    <div class="collect-area">
+        <button id="collect-all-btn" onclick="window.collectAll()">💰 COLLECT<br><span id="pending-sum" style="font-size:1rem;">$0</span></button>
+    </div>
+
+    <div id="msg">NEW!</div>
+
+    <div class="controls">
+        <div id="rebirth-cond" style="color:var(--gold); margin-bottom:5px; font-size:0.9rem;">Cost: $100,000</div>
+        <div id="rebirth-char-cond" style="color:var(--accent); margin-bottom:10px; font-size:0.8rem; background:rgba(163,53,238,0.2); padding:5px 15px; border-radius:10px; display:inline-block;">Required: ???</div>
+        <button id="rebirth-btn" onclick="window.rebirth()">🔄 REBIRTH</button>
+    </div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    let money = 500, rebirths = 0, lastS = 0, lastIncomeTick = 0;
+    let normalSpawnCount = 0; 
+    let myItems = new Array(16).fill(null);
+    let library = {}; 
+    let charInSlots = new Array(16).fill(null);
+    let slotObjects = [], conveyorGroups = [];
+    let selectedIdx = -1, hoveredIdx = -1, hoveredConveyorId = null;
+
+    const FEVER_INTERVAL = 900; 
+    const FEVER_DURATION = 60;   
+    let gameStartTime = Date.now();
+    let isFeverActive = false;
+    let luckySpawnedInFever = false;
+
+    // --- Audio System ---
+    const listener = new THREE.AudioListener();
+    const audioLoader = new THREE.AudioLoader();
+    const bgmNormal = new THREE.Audio(listener);
+    const bgmFever = new THREE.Audio(listener);
+    const clickSound = new THREE.Audio(listener);
+
+    audioLoader.load('bgm.mp3', (buffer) => { bgmNormal.setBuffer(buffer); bgmNormal.setLoop(true); bgmNormal.setVolume(0.4); });
+    audioLoader.load('fever.mp3', (buffer) => { bgmFever.setBuffer(buffer); bgmFever.setLoop(true); bgmFever.setVolume(0.5); });
+    audioLoader.load('click.mp3', (buffer) => { clickSound.setBuffer(buffer); clickSound.setVolume(0.5); });
+
+    function playClick() { if(clickSound.isPlaying) clickSound.stop(); clickSound.play(); }
+    function updateBGM(isFever) {
+        if(isFever) {
+            if(bgmNormal.isPlaying) bgmNormal.stop();
+            if(!bgmFever.isPlaying) bgmFever.play();
+        } else {
+            if(bgmFever.isPlaying) bgmFever.stop();
+            if(!bgmNormal.isPlaying) bgmNormal.play();
+        }
+    }
+
+    const rebirthRequirements = [
+        ["Skeleton"], ["Mage"], ["Joker"], ["Dragon"], ["Zeus"], ["Oracle", "Chronos"]
+    ];
+
+    const rarities = [
+        { name: "N", color: "#ffffff", chance: 85, basePrice: 50, baseValue: 4 },
+        { name: "R", color: "#0070dd", chance: 12, basePrice: 500, baseValue: 48 },
+        { name: "SR", color: "#a335ee", chance: 2.4, basePrice: 7500, baseValue: 720 },
+        { name: "SSR", color: "#ff8000", chance: 0.5, basePrice: 1000000, baseValue: 100000 },
+        { name: "LEGEND", color: "#ff00ff", chance: 0.1, basePrice: 125000000, baseValue: 14000000 },
+        { name: "OG", color: "#e91e63", chance: 0.01, basePrice: 9999999, baseValue: 55555555 }
+    ];
+
+    const feverChances = [
+        { name: "N", color: "#ffffff", chance: 45, basePrice: 50, baseValue: 4 },
+        { name: "R", color: "#0070dd", chance: 35, basePrice: 500, baseValue: 48 },
+        { name: "SR", color: "#a335ee", chance: 12, basePrice: 7500, baseValue: 720 },
+        { name: "SSR", color: "#ff8000", chance: 5.4, basePrice: 1000000, baseValue: 100000 },
+        { name: "LEGEND", color: "#ff00ff", chance: 2.5, basePrice: 125000000, baseValue: 14000000 },
+        { name: "OG", color: "#e91e63", chance: 0.1, basePrice: 9999999, baseValue: 55555555 }
+    ];
+
+    const charData = {
+        "N": [
+            {e:"💀", n:"Skeleton"},{e:"🗿", n:"Stone Man"},{e:"🧟", n:"Zombie"},{e:"👻", n:"Spirit"},{e:"🐀", n:"Rat"},{e:"🐸", n:"Frog"},{e:"🐈", n:"Cat"},{e:"🐕", n:"Dog"},{e:"🐢", n:"Turtle"},{e:"🐌", n:"Snail"},
+            {e:"🐿️", n:"Squirrel"},{e:"🐇", n:"Bunny"},{e:"🐤", n:"Chick"},{e:"🐜", n:"Ant"},{e:"🦟", n:"Mosquito"},{e:"🐛", n:"Bug"},{e:"🍄", n:"Mushy"},{e:"🪵", n:"Wood"},{e:"🌿", n:"Leaf"},{e:"💩", n:"Poop"},
+            {e:"🪨", n:"Rock"},{e:"🦴", n:"Bone"},{e:"🍃", n:"Sprout"},{e:"🥚", n:"Egg"},{e:"🥔", n:"Potato"},{e:"🥕", n:"Carrot"},{e:"🌽", n:"Corn"},{e:"🌻", n:"Flower"},{e:"🦗", n:"Cricket"},{e:"🕸️", n:"Web"},
+            {e:"🧱", n:"Brick"},{e:"🏺", n:"Pot"},{e:"🧹", n:"Broom"},{e:"🧺", n:"Basket"},{e:"🕯️", n:"Candle"},{e:"📎", n:"Clip"},{e:"🔑", n:"Key"},{e:"📦", n:"Box"},{e:"🩹", n:"Bandage"},{e:"🎈", n:"Balloon"},
+            {e:"🥖", n:"Bread"},{e:"🍎", n:"Apple"},{e:"🍙", n:"Rice"},{e:"🍼", n:"Milk"},{e:"🧂", n:"Salt"},{e:"🥄", n:"Spoon"},{e:"🧤", n:"Glove"},{e:"👞", n:"Shoe"},{e:"👒", n:"Hat"},{e:"👕", n:"Shirt"},
+            {e:"🪱", n:"Worm"},{e:"🪴", n:"Plant"},{e:"🐚", n:"Shell"},{e:"🪶", n:"Feather"},{e:"🧶", n:"Yarn"},{e:"🧷", n:"Pin"},{e:"🧦", n:"Sock"},{e:"🧼", n:"Soap"},{e:"🧻", n:"Paper"},{e:"📦", n:"Parcel"},
+            {e:"🪣", n:"Bucket"},{e:"🪑", n:"Chair"},{e:"🥣", n:"Bowl"},{e:"🍴", n:"Fork"},{e:"🏮", n:"Lantern"},{e:"🪞", n:"Mirror"},{e:"🎐", n:"Chime"},{e:"🪆", n:"Doll"},{e:"🪀", n:"Yo-yo"},{e:"🪁", n:"Kite"},
+            {e:"🖌️", n:"Brush"},{e:"🖊️", n:"Pen"},{e:"📏", n:"Ruler"},{e:"📒", n:"Note"},{e:"🔖", n:"Marker"},{e:"🏷️", n:"Tag"},{e:"📪", n:"Mail"},{e:"🔔", n:"Bell"},{e:"📣", n:"Horn"},{e:"🃏", n:"Card"}
+        ],
+        "R": [
+            {e:"🧙", n:"Mage"},{e:"🏇", n:"Knight"},{e:"🧝", n:"Elf"},{e:"🧜", n:"Siren"},{e:"🐺", n:"Wolf"},{e:"🧛", n:"Vampire"},{e:"🦉", n:"Owl"},{e:"🦁", n:"Lion"},{e:"🐻", n:"Bear"},{e:"🦅", n:"Eagle"},
+            {e:"🐗", n:"Boar"},{e:"🦄", n:"Pony"},{e:" foxes", n:"Fox"},{e:"🐼", n:"Panda"},{e:"🐪", n:"Camel"},{e:"🦘", n:"Kangaroo"},{e:"🐆", n:"Leopard"},{e:"🦒", n:"Giraffe"},{e:"🦓", n:"Zebra"},{e:"🐃", n:"Buffalo"},
+            {e:"🦏", n:"Rhino"},{e:"🦛", n:"Hippo"},{e:"🐘", n:"Elephant"},{e:"🦍", n:"Gorilla"},{e:"🐆", n:"Cheetah"},{e:"🦈", n:"Shark"},{e:"🐋", n:"Whale"},{e:"🐬", n:"Dolphin"},{e:"🐊", n:"Croc"},{e:"蠍", n:"Scorpion"},
+            {e:"🏹", n:"Archer"},{e:"🛡️", n:"Guard"},{e:"⚔️", n:"Soldier"},{e:"🔨", n:"Smith"},{e:"🧪", n:"Alchemist"},{e:"📜", n:"Scholar"},{e:"🎻", n:"Bard"},{e:"🍳", n:"Chef"},{e:"🚜", n:"Farmer"},{e:"⛏️", n:"Miner"},
+            {e:"🗡️", n:"Dagger"},{e:"🛡️", n:"Shield"},{e:"⚗️", n:"Flask"},{e:"📡", n:"Dish"},{e:"🛰️", n:"Satellite"},{e:"Compass", n:"Compass"},{e:"🌡️", n:"Meter"},{e:"🔋", n:"Battery"},{e:"🔌", n:"Plug"},{e:"💡", n:"Bulb"},
+            {e:"🧲", n:"Magnet"},{e:"🔭", n:"Scope"},{e:"🩺", n:"Steth"},{e:"🧬", n:"Gene"},{e:"🧪", n:"Tube"},{e:"🧫", n:"Dish"},{e:"🔬", n:"Micro"},{e:"🩻", n:"X-ray"},{e:"📜", n:"Map"},{e:"⚔️", n:"Spear"}
+        ],
+        "SR": [
+            {e:"🤡", n:"Joker"},{e:"🐉", n:"Drake"},{e:"🐙", n:"Kraken"},{e:"🦍", n:"Kong"},{e:"👑", n:"Prince"},{e:"⚡", n:"Spark"},{e:"🔥", n:"Ember"},{e:"❄️", n:"Frost"},{e:"🌪️", n:"Storm"},{e:"☄️", n:"Comet"},
+            {e:"💎", n:"Grit"},{e:"👺", n:"Tengu"},{e:"👹", n:"Ogre"},{e:"👽", n:"Martian"},{e:"🤖", n:"Droid"},{e:"🧜‍♂️", n:"Triton"},{e:"🧞", n:"Genie"},{e:"🧚", n:"Pixie"},{e:"🧛‍♀️", n:"Countess"},{e:"🧟‍♂️", n:"Walker"},
+            {e:"🎭", n:"Phantom"},{e:"🦾", n:"Cyborg"},{e:"🔋", n:"Volt"},{e:"🛰️", n:"Probe"},{e:"🌋", n:"Flare"},{e:"⛓️", n:"Warden"},{e:"🕯️", n:"Medium"},{e:"🧿", n:"Seer"},{e:"⛩️", n:"Monk"},{e:"⚔️", n:"Samurai"},
+            {e:"🧥", n:"Spy"},{e:"🧪", n:"Mutant"},{e:"🔌", n:"Tesla"},{e:"📡", n:"Radar"},{e:"🔭", n:"Watcher"}
+        ],
+        "SSR": [
+            {e:"🐲", n:"Dragon"},{e:"✨", n:"Holy"},{e:"💫", n:"Cosmo"},{e:"☀️", n:"Solar"},{e:" UFO", n:"UFO"},{e:"🪐", n:"Titan"},{e:"🌋", n:"Magma"},{e:"🌊", n:"Tide"},{e:"🌈", n:"Prism"},{e:"🧠", n:"Mind"},
+            {e:"🔱", n:"Neptune"},{e:"🛡️", n:"Aegis"},{e:"⚔️", n:"Excalibur"},{e:"⛩️", n:"Gate"},{e:"🏮", n:"Lant"},{e:"🧿", n:"Oracle Eye"},{e:"🧬", n:"Genome"},{e:"🧪", n:"Catalyst"},{e:"📡", n:"Cosmic Signal"},{e:"🛰️", n:"Orbiter"}
+        ],
+        "LEGEND": [
+            {e:"🔱", n:"Zeus"},{e:"👁️", n:"Oracle"},{e:"🕰️", n:"Chronos"},{e:"♾️", n:"Infinite"},{e:"🌐", n:"World"}
+        ],
+        "OG": [
+            {e:"🤥", n:"NET"}
+        ]
+    };
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020205);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 30000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    camera.add(listener); // Listener to camera
+
+    window.addEventListener('resize', () => {
+        const w = window.innerWidth, h = window.innerHeight;
+        renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+    });
+
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = [];
+    for(let i=0; i<20000; i++) starPos.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.2}));
+    scene.add(stars);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+
+    const conv = new THREE.Mesh(new THREE.BoxGeometry(10, 0.5, 100), new THREE.MeshStandardMaterial({color: 0x151515}));
+    conv.position.set(-28, 0, -8);
+    scene.add(conv);
+
+    for(let i=0; i<16; i++) {
+        const x = (i%4)*8-10, z = Math.floor(i/4)*8-18;
+        const s = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.8, 1.2, 32), new THREE.MeshStandardMaterial({color:0x222222}));
+        s.position.set(x, 0.5, z); s.userData = { slotIndex: i };
+        scene.add(s); slotObjects.push(s);
+    }
+    camera.position.set(0, 35, 25); camera.lookAt(0, 0, -6);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        checkHover();
+    });
+
+    function checkHover() {
+        raycaster.setFromCamera(mouse, camera);
+        hoveredConveyorId = null;
+        for (let g of conveyorGroups) { if (raycaster.intersectObjects(g.children).length > 0) { hoveredConveyorId = g.uuid; break; } }
+        const hits = raycaster.intersectObjects(slotObjects);
+        if (hits.length > 0) {
+            const idx = hits[0].object.userData.slotIndex;
+            if (idx < (8 + rebirths * 2)) hoveredIdx = idx; else hoveredIdx = -1;
+        } else { hoveredIdx = -1; }
+    }
+
+    window.addEventListener('mousedown', (e) => {
+        // Start BGM on first interaction
+        if (!bgmNormal.isPlaying && !isFeverActive) bgmNormal.play();
+        if (isFeverActive && !bgmFever.isPlaying) bgmFever.play();
+
+        if(e.target.tagName === 'BUTTON') return;
+        raycaster.setFromCamera(mouse, camera);
+        for(let g of conveyorGroups){
+            if(raycaster.intersectObjects(g.children).length>0){
+                if(g.userData.isBox) {
+                    const empty = myItems.indexOf(null);
+                    if(empty === -1 || empty >= (8 + rebirths * 2)) {
+                        showPopup("NO SLOTS LEFT!", "#ff4444");
+                        return;
+                    }
+                    if(money >= g.userData.cost) {
+                        playClick(); // Sound
+                        money -= g.userData.cost;
+                        scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g);
+                        openBox();
+                    } return;
+                }
+                const empty = myItems.indexOf(null);
+                const mult = (1 + rebirths);
+                if(money >= g.userData.cost && empty !== -1 && empty < (8 + rebirths * 2)){
+                    playClick(); // Sound
+                    money -= g.userData.cost; 
+                    myItems[empty] = {...g.userData, stored:0};
+                    const finalVal = (g.userData.val * (g.userData.luckyMult || 1)) * mult;
+                    if(!library[g.userData.e] || finalVal > library[g.userData.e].maxVal) {
+                        library[g.userData.e] = { n: g.userData.n, maxVal: finalVal, isLucky: (g.userData.luckyMult > 1) };
+                    }
+                    if(g.userData.luckyMult > 1) showPopup("LUCKY GET!!", "#00ffff");
+                    scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g); refresh();
+                } return;
+            }
+        }
+        const hits = raycaster.intersectObjects(slotObjects);
+        if(hits.length>0){
+            const idx = hits[0].object.userData.slotIndex;
+            if(idx >= (8 + rebirths * 2)) return;
+            if(selectedIdx === -1){ if(myItems[idx]) selectedIdx = idx; } 
+            else {
+                if(idx === selectedIdx){ 
+                    if(myItems[idx].stored > 0) playClick(); // Sound on collect
+                    money += myItems[idx].stored; 
+                    myItems[idx].stored = 0; 
+                    selectedIdx = -1; 
+                } 
+                else { const temp = myItems[idx]; myItems[idx] = myItems[selectedIdx]; myItems[selectedIdx] = temp; selectedIdx = -1; }
+            }
+            refresh();
+        } else { selectedIdx = -1; refresh(); }
+    });
+
+    window.collectAll = function() {
+        let total = 0;
+        myItems.forEach(it => { if(it){ total += it.stored; it.stored = 0; } });
+        if(total > 0) { playClick(); money += total; }
+        refresh();
+    };
+
+    window.discardSelected = function() {
+        if(selectedIdx !== -1 && myItems[selectedIdx]) {
+            playClick(); // Sound
+            money += myItems[selectedIdx].cost * 0.5;
+            myItems[selectedIdx] = null;
+            selectedIdx = -1;
+            refresh();
+        }
+    };
+
+    window.rebirth = function() {
+        if(rebirths >= rebirthRequirements.length) return;
+        const reqs = rebirthRequirements[rebirths];
+        const cost = 100000 * Math.pow(10, rebirths);
+        const hasAll = reqs.every(name => myItems.some(it => it && it.n === name));
+        if(money >= cost && hasAll) {
+            playClick(); // Sound
+            money = 500; rebirths++; myItems.fill(null);
+            showPopup(`REBIRTH LEVEL ${rebirths}!!`, "#a335ee");
+            refresh();
+        }
+    };
+
+    function spawn() {
+        if(!isFeverActive) {
+            normalSpawnCount++;
+            if(normalSpawnCount >= 20) {
+                spawnBox();
+                normalSpawnCount = 0;
+                return;
+            }
+        }
+
+        const elapsed = (Date.now() - gameStartTime) / 1000, cycle = elapsed % FEVER_INTERVAL;
+        const activeTable = isFeverActive ? feverChances : rarities;
+        let isLucky = false;
+
+        if(isFeverActive && !luckySpawnedInFever) { 
+            const timeLeft = FEVER_DURATION - cycle;
+            if(Math.random() < (1.0 / (timeLeft + 1)) || timeLeft < 5) { isLucky = true; luckySpawnedInFever = true; }
+        }
+
+        let rand = Math.random()*100, cum=0, r=activeTable[0];
+        for(let x of activeTable){ cum+=x.chance; if(rand<=cum){ r=x; break; } }
+        const list = charData[r.name];
+        const d = list[Math.floor(Math.random()*list.length)];
+        
+        let variance = 0.85 + Math.random() * 0.3;
+        let baseVal = Math.floor(r.baseValue * variance);
+        if(r.name === "OG") {
+            baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
+        }
+
+        const finalCost = Math.floor(r.basePrice * (r.name === "OG" ? 1 : variance));
+        const luckyMult = isLucky ? (2 + Math.floor(Math.random()*49)) : 1;
+
+        const g = new THREE.Group(); g.add(createEmoji(d.e));
+        const subTxt = isLucky ? `★LUCKY x${luckyMult}★ $${finalCost.toLocaleString()}` : `[${r.name}] $${finalCost.toLocaleString()} (+$${baseVal}/s)`;
+        const lbl = createLabel(d.n, subTxt, isLucky ? "#00ffff" : r.color, isLucky); 
+        lbl.position.y=7; lbl.material.opacity = 1; g.add(lbl);
+        g.position.set(-28, 2.5, -55);
+        
+        const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(d.n);
+        g.userData = { e:d.e, n:d.n, rKey:r.name, cost:finalCost, val:baseVal, luckyMult:luckyMult, offsetY: 0, isRequired };
+        
+        if(isRequired) {
+            const ringGeo = new THREE.TorusGeometry(4, 0.2, 16, 100);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xa335ee });
+            const ring = new THREE.Mesh(ringGeo, ringMat); ring.rotation.x = Math.PI/2; g.add(ring);
+            const pLight = new THREE.PointLight(0xa335ee, 100, 15); g.add(pLight);
+        }
+
+        if(isLucky) {
+            const auraGeo = new THREE.TorusGeometry(3.5, 0.15, 8, 50);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 });
+            const aura = new THREE.Mesh(auraGeo, auraMat); aura.rotation.x = Math.PI/2; g.add(aura);
+            g.userData.isLuckyEffect = true;
+            showPopup("LUCKY INBOUND!", "#00ffff");
+        } else if(r.name === "SSR" || r.name === "LEGEND" || r.name === "OG") {
+            const pLight = new THREE.PointLight(r.color, 50, 20); g.add(pLight);
+            const beam = new THREE.Mesh(new THREE.CylinderGeometry(1, 2, 50, 16, 1, true), new THREE.MeshBasicMaterial({ color: r.color, transparent: true, opacity: 0.3, side: THREE.DoubleSide }));
+            beam.position.y = 20; g.add(beam); showPopup(`!! ${r.name} !!`, r.color);
+        }
+        scene.add(g); conveyorGroups.push(g);
+    }
+
+    function spawnBox() {
+        const cost = 100 + Math.floor(Math.random() * 99901);
+        const g = new THREE.Group(); g.add(createEmoji("📦"));
+        const lbl = createLabel("SECRET BOX", `Buy for $${cost.toLocaleString()}?`, "#00ffff", true);
+        lbl.position.y = 7; lbl.material.opacity = 1; g.add(lbl);
+        g.position.set(-28, 2.5, -55);
+        g.userData = { isBox: true, cost: cost, offsetY: 0, isLuckyEffect: true };
+        
+        const pLight = new THREE.PointLight(0x00ffff, 100, 15); g.add(pLight);
+        scene.add(g); conveyorGroups.push(g);
+        showPopup("SECRET BOX INBOUND!", "#00ffff");
+    }
+
+    function openBox() {
+        if(Math.random() < 0.05 && rebirths < rebirthRequirements.length) {
+            const reqs = rebirthRequirements[rebirths];
+            const targetName = reqs[Math.floor(Math.random() * reqs.length)];
+            let foundData = null, foundRar = null;
+            for(let rk in charData) {
+                const char = charData[rk].find(c => c.n === targetName);
+                if(char) { foundData = char; foundRar = rk; break; }
+            }
+            if(foundData) {
+                giveChar(foundRar, 1, targetName); 
+                showPopup("✨ REBIRTH HELPER !!", "#a335ee");
+                return;
+            }
+        }
+        const r = Math.random() * 100;
+        if(r < 40) { money += 5000; showPopup("+ $5,000 !!", "#0f8");
+        } else if(r < 60) { gameStartTime = Date.now() - (FEVER_INTERVAL * 1000); showPopup("🔥 FEVER STARTED !!", "#ffeb3b");
+        } else if(r < 80) { giveChar("SR", 1);
+        } else if(r < 88) { money *= 10; showPopup("💰 CASH x10 !!", "#ffeb3b");
+        } else if(r < 94) { giveChar("SSR", 1);
+        } else if(r < 98) { giveChar("LEGEND", 1);
+        } else { giveChar("OG", 1); }
+    }
+
+    function giveChar(rarName, luckyM, specificName = null) {
+        const empty = myItems.indexOf(null);
+        if(empty === -1 || empty >= (8 + rebirths * 2)) {
+            showPopup("NO EMPTY SLOTS!", "#ff4444");
+            return;
+        }
+        const list = charData[rarName];
+        const d = specificName ? list.find(c => c.n === specificName) : list[Math.floor(Math.random()*list.length)];
+        const rar = rarities.find(x => x.name === rarName);
+        
+        let baseVal = Math.floor(rar.baseValue);
+        if(rarName === "OG") {
+            baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
+        }
+
+        myItems[empty] = { e:d.e, n:d.n, rKey:rarName, cost:rar.basePrice, val:baseVal, luckyMult:luckyM, stored:0 };
+        const finalVal = (baseVal * luckyM) * (1 + rebirths);
+        if(!library[d.e] || finalVal > library[d.e].maxVal) {
+            library[d.e] = { n: d.n, maxVal: finalVal, isLucky: (luckyM > 1) };
+        }
+        showPopup(`GOT ${rarName} !!`, rar.color);
+        refresh();
+    }
+
+    function refresh() {
+        const unlocked = Math.min(16, 8 + rebirths * 2);
+        const mult = (1 + rebirths);
+        slotObjects.forEach((s, i) => {
+            if (i >= unlocked) s.material.color.setHex(0x050505);
+            else if (selectedIdx === i) s.material.color.setHex(0x00ff88);
+            else if (myItems[i]) s.material.color.set(myItems[i].luckyMult > 1 ? "#00ffff" : rarities.find(rar => rar.name === myItems[i].rKey).color);
+            else s.material.color.setHex(0x222222);
+        });
+        myItems.forEach((it, i) => {
+            if(charInSlots[i]){ scene.remove(charInSlots[i]); charInSlots[i] = null; }
+            if(it){
+                const g = new THREE.Group(); g.add(createEmoji(it.e));
+                const isL = it.luckyMult > 1;
+                const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(it.n);
+                const pps = (it.val * it.luckyMult) * mult;
+                const rarColor = rarities.find(r=>r.name===it.rKey).color;
+                const lbl = createLabel(it.n, `${isL ? '★LUCKY★ ' : ''}+$${pps.toLocaleString()}/s`, isL ? "#00ffff" : rarColor, isL);
+                lbl.position.y=7; g.add(lbl); g.position.copy(slotObjects[i].position); g.position.y=4;
+                g.userData.isRequired = isRequired;
+                if(isRequired) {
+                    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.15, 16, 100), new THREE.MeshBasicMaterial({ color: 0xa335ee }));
+                    ring.rotation.x = Math.PI/2; g.add(ring);
+                    const pLight = new THREE.PointLight(0xa335ee, 50, 10); g.add(pLight);
+                }
+                if(isL) {
+                    const aura = new THREE.Mesh(new THREE.TorusGeometry(3,0.1,8,32), new THREE.MeshBasicMaterial({color:0x00ffff, transparent:true, opacity:0.4}));
+                    aura.rotation.x=Math.PI/2; aura.position.y = -0.5; g.add(aura); g.userData.isLuckyEffect = true;
+                }
+                scene.add(g); charInSlots[i] = g;
+            }
+        });
+        document.getElementById('discard-btn').style.display = (selectedIdx !== -1 && myItems[selectedIdx]) ? 'block' : 'none';
+        document.getElementById('rebirth-lv').innerText = rebirths;
+        
+        const reqArea = document.getElementById('rebirth-char-cond');
+        if(rebirths < rebirthRequirements.length) {
+            const reqs = rebirthRequirements[rebirths];
+            const status = reqs.map(name => {
+                const has = myItems.some(it => it && it.n === name);
+                return `<span style="color:${has ? '#0f8' : '#ff4444'}">${has ? '✅' : '❌'}${name}</span>`;
+            }).join(" ");
+            reqArea.innerHTML = `Required: ${status}`;
+            document.getElementById('rebirth-cond').innerText = `Cost: $${(100000 * Math.pow(10, rebirths)).toLocaleString()}`;
+            const canAfford = money >= (100000 * Math.pow(10, rebirths)) && reqs.every(n => myItems.some(it => it && it.n === n));
+            document.getElementById('rebirth-btn').className = canAfford ? "available" : "locked";
+        } else { reqArea.innerText = "MAX REBIRTH REACHED"; document.getElementById('rebirth-btn').className = "locked"; }
+        save();
+    }
+
+    function createEmoji(e){
+        const canvas = document.createElement('canvas'); canvas.width=256; canvas.height=256;
+        const ctx = canvas.getContext('2d'); ctx.font="220px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(e,128,128);
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas)}));
+        sp.scale.set(5,5,1); return sp;
+    }
+    function createLabel(t1, t2, color, isLucky){
+        const canvas = document.createElement('canvas'); canvas.width=600; canvas.height=200;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle="rgba(0,0,0,0.85)"; ctx.strokeStyle=color; ctx.lineWidth=10; 
+        ctx.beginPath(); ctx.roundRect(5,5,590,190,20); ctx.fill(); ctx.stroke();
+        ctx.fillStyle="white"; ctx.textAlign="center"; ctx.font="bold 45px Arial"; ctx.fillText(t1, 300, 80);
+        ctx.fillStyle=color; ctx.font="bold 35px Arial"; ctx.fillText(t2, 300, 150);
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas), transparent:true, opacity: 0}));
+        sp.scale.set(9,3,1); 
+        if(isLucky) sp.userData = { canvas, ctx, t1, t2 };
+        return sp;
+    }
+    function updateRainbowLabel(sp, color) {
+        const { canvas, ctx, t1, t2 } = sp.userData;
+        ctx.clearRect(0,0,600,200);
+        ctx.fillStyle="rgba(0,0,0,0.85)"; ctx.strokeStyle=color; ctx.lineWidth=10;
+        ctx.beginPath(); ctx.roundRect(5,5,590,190,20); ctx.fill(); ctx.stroke();
+        ctx.fillStyle="white"; ctx.textAlign="center"; ctx.font="bold 45px Arial"; ctx.fillText(t1, 300, 80);
+        ctx.fillStyle=color; ctx.font="bold 35px Arial"; ctx.fillText(t2, 300, 150);
+        sp.material.map.needsUpdate = true;
+    }
+
+    function animate(t) {
+        requestAnimationFrame(animate);
+        const rainbow = `hsl(${t % 360}, 100%, 70%)`;
+        
+        conveyorGroups.forEach((g,i)=>{ 
+            g.position.z += 0.1; if(g.position.z > 50){ scene.remove(g); conveyorGroups.splice(i,1); return; }
+            const isH = (hoveredConveyorId === g.uuid);
+            let bounce = 0;
+            if(g.userData.isRequired) {
+                bounce = Math.abs(Math.sin(t * 0.005)) * 2;
+                const ring = g.children.find(c => c.geometry && c.geometry.type === "TorusGeometry");
+                if(ring) ring.rotation.z += 0.05;
+            }
+            g.userData.offsetY += ((isH ? 3.0 : 0) - g.userData.offsetY) * 0.15;
+            g.children[0].position.y = g.userData.offsetY + bounce;
+            g.children[1].position.y = 8 + g.userData.offsetY + bounce;
+            if(g.userData.isLuckyEffect && g.children[1].userData && g.children[1].userData.canvas) { 
+                updateRainbowLabel(g.children[1], rainbow);
+            }
+        });
+        
+        const mult = (1 + rebirths), isTick = (t - lastIncomeTick >= 1000);
+        let pending = 0, currentPPS = 0;
+        charInSlots.forEach((g,i)=>{
+            if(g && myItems[i]){
+                if(isTick) myItems[i].stored += (myItems[i].val * myItems[i].luckyMult) * mult;
+                pending += myItems[i].stored; currentPPS += (myItems[i].val * myItems[i].luckyMult) * mult;
+                const isS = (selectedIdx === i), isH = (hoveredIdx === i);
+                let bounce = 0;
+                if(g.userData.isRequired) {
+                    bounce = Math.abs(Math.sin(t * 0.005)) * 1.5;
+                    const ring = g.children.find(c => c.type === "Mesh" && c.geometry.type === "TorusGeometry");
+                    if(ring) ring.rotation.z += 0.05;
+                }
+                g.position.y += ((4 + (isH || isS ? 2 : 0) + bounce) - g.position.y) * 0.15;
+                g.children[1].material.opacity += ((isH || isS ? 1 : 0) - g.children[1].material.opacity) * 0.15;
+                if(g.userData.isLuckyEffect && g.children[1].userData && g.children[1].userData.canvas) {
+                    updateRainbowLabel(g.children[1], rainbow);
+                }
+            }
+        });
+
+        const now = Date.now();
+        const elapsed = (now - gameStartTime) / 1000, cycle = elapsed % FEVER_INTERVAL;
+        const fTimer = document.getElementById('fever-timer');
+        if (cycle < FEVER_DURATION) {
+            if(!isFeverActive) { 
+                isFeverActive = true; 
+                luckySpawnedInFever = false; 
+                showPopup("🔥 FEVER!!", "#ffeb3b"); 
+                updateBGM(true); // Switch to Fever BGM
+            }
+            fTimer.innerText = `🔥 FEVER: ${Math.ceil(FEVER_DURATION - cycle)}s`;
+            fTimer.style.color = "#ffeb3b";
+            document.getElementById('fever-overlay').style.display = 'block';
+            scene.background.lerp(new THREE.Color(0x330011), 0.05);
+        } else {
+            if(isFeverActive) {
+                isFeverActive = false;
+                updateBGM(false); // Switch back to Normal BGM
+            }
+            const next = Math.ceil(FEVER_INTERVAL - cycle);
+            fTimer.innerText = `Next Fever: ${Math.floor(next/60)}:${(next%60).toString().padStart(2,'0')}`;
+            fTimer.style.color = "#888";
+            document.getElementById('fever-overlay').style.display = 'none';
+            scene.background.lerp(new THREE.Color(0x020205), 0.05);
+        }
+
+        document.getElementById('box-timer').innerText = `Secret Box: ${normalSpawnCount} / 20`;
+        if(isTick) lastIncomeTick = t;
+        document.getElementById('money').innerText = Math.floor(money).toLocaleString();
+        document.getElementById('pps').innerText = Math.floor(currentPPS).toLocaleString();
+        document.getElementById('pending-sum').innerText = `$${Math.floor(pending).toLocaleString()}`;
+        renderer.render(scene, camera);
+    }
+
+    function showPopup(txt, color) {
+        const m = document.getElementById('msg'); m.innerText = txt; m.style.color = color; m.style.opacity = 1;
+        setTimeout(()=> m.style.opacity = 0, 1500);
+    }
+
+    function save() {
+        localStorage.setItem('cosmic_save_v2', JSON.stringify({money, rebirths, library, myItems, time: Date.now() - gameStartTime}));
+    }
+    function load() {
+        const s = localStorage.getItem('cosmic_save_v2');
+        if(s){
+            const d = JSON.parse(s); money = d.money; rebirths = d.rebirths; library = d.library; myItems = d.myItems; gameStartTime = Date.now() - d.time;
+            refresh();
+        }
+    }
+
+    window.toggleSettings = () => { const s = document.getElementById('settings-menu').style; s.display = s.display === 'flex' ? 'none' : 'flex'; };
+    window.toggleFullscreen = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
+    window.toggleLib = () => {
+        const w = document.getElementById('lib-window');
+        const isD = w.style.display === 'flex';
+        w.style.display = isD ? 'none' : 'flex';
+        if(!isD){
+            const g = document.getElementById('lib-grid'); g.innerHTML = "";
+            let total = 0;
+            for(let rk in charData) {
+                charData[rk].forEach(c => {
+                    total++;
+                    const entry = library[c.e];
+                    const div = document.createElement('div');
+                    div.style = `background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; border: 1px solid ${entry ? (entry.isLucky ? '#00ffff' : '#444') : '#222'}`;
+                    div.innerHTML = `<div style="font-size:2rem; filter: grayscale(${entry?0:1})">${c.e}</div>
+                                     <div style="font-size:0.7rem; color:${entry?'#fff':'#444'}">${c.n}</div>
+                                     <div style="font-size:0.6rem; color:var(--gold)">${entry?'Max: $'+Math.floor(entry.maxVal):'???'}</div>`;
+                    g.appendChild(div);
+                });
+            }
+        }
+    };
+    window.resetGame = () => { if(confirm("RESET ALL PROGRESS?")){ localStorage.removeItem('cosmic_save_v2'); location.reload(); } };
+
+    setInterval(spawn, 3000);
+    load();
+    animate(0);
+</script>
+</body>
+</html>
