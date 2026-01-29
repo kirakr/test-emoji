@@ -49,6 +49,11 @@
         }
         .menu-btn { width: 100%; padding: 1.5vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: 900; color: white; font-size: 1.2rem; }
         
+        /* Volume Sliders Style */
+        .volume-control { display: flex; flex-direction: column; gap: 0.5vh; padding: 0.5vh 0; }
+        .volume-control label { font-size: 0.8rem; color: var(--gold); display: flex; justify-content: space-between; }
+        .volume-control input { cursor: pointer; accent-color: var(--neon); }
+
         #discard-btn {
             position: absolute; bottom: 22vh; left: 50%; transform: translateX(-50%);
             background: linear-gradient(#ff4444, #990000); color: white;
@@ -125,6 +130,14 @@
             <button class="menu-btn" style="background:#ff9800" onclick="toggleShop()" id="btn-shop">🛍️ SHOP</button>
             <button class="menu-btn" style="background:#2196F3" onclick="toggleStats()" id="btn-stats">📊 STATS</button>
             <button class="menu-btn" style="background:#4caf50" onclick="toggleLanguage()" id="btn-lang">🌐 JP / EN</button>
+            
+            <div class="volume-control">
+                <label><span>BGM</span><span id="bgm-val">50%</span></label>
+                <input type="range" min="0" max="1" step="0.01" value="0.5" id="bgm-slider" oninput="updateBgmVolume(this.value)">
+                <label><span>SE</span><span id="se-val">80%</span></label>
+                <input type="range" min="0" max="1" step="0.01" value="0.8" id="se-slider" oninput="updateSeVolume(this.value)">
+            </div>
+
             <button class="menu-btn" style="background:#333" onclick="toggleFullscreen()" id="btn-full">🖥 FULLSCREEN</button>
             <button class="menu-btn" style="background:transparent; color:red; border:1px solid red; font-size:0.8rem;" onclick="resetGame()" id="btn-reset">⚠ RESET</button>
         </div>
@@ -195,10 +208,23 @@
     bgm.volume = 0.5;
 
     const clickSound = new Audio('click.mp3');
+    clickSound.volume = 0.8;
     function playClick() {
         clickSound.currentTime = 0;
         clickSound.play().catch(() => {});
     }
+
+    // グローバル音量設定用関数
+    window.updateBgmVolume = (val) => {
+        bgm.volume = val;
+        document.getElementById('bgm-val').innerText = Math.floor(val * 100) + "%";
+        save();
+    };
+    window.updateSeVolume = (val) => {
+        clickSound.volume = val;
+        document.getElementById('se-val').innerText = Math.floor(val * 100) + "%";
+        save();
+    };
 
     window.addEventListener('mousedown', () => {
         if (bgm.paused) bgm.play().catch(() => {});
@@ -368,7 +394,7 @@
     }
 
     window.addEventListener('mousedown', (e) => {
-        if(e.target.tagName === 'BUTTON') return;
+        if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
         raycaster.setFromCamera(mouse, camera);
         for(let g of conveyorGroups){
             if(raycaster.intersectObjects(g.children).length>0){
@@ -855,8 +881,28 @@
     window.toggleLib = () => { const w = document.getElementById('lib-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderLib(); };
     window.toggleShop = () => { const w = document.getElementById('shop-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderShop(); };
     function showPopup(t, c){ const e=document.getElementById('msg'); e.innerText=t; e.style.color=c; e.style.opacity=1; setTimeout(()=>e.style.opacity=0,1500); }
-    function save(){ localStorage.setItem('tycoon_save_v24', JSON.stringify({money, rebirths, myItems, library, gameStartTime, normalSpawnCount, ownedDecor, currentDecor, currentLang})); }
-    function load(){ const d=JSON.parse(localStorage.getItem('tycoon_save_v24')); if(d){ money=d.money; rebirths=d.rebirths; myItems=d.myItems; library=d.library||{}; gameStartTime=d.gameStartTime||Date.now(); normalSpawnCount=d.normalSpawnCount||0; ownedDecor=d.ownedDecor||["default"]; currentDecor=d.currentDecor||"default"; currentLang=d.currentLang||"en"; } refresh(); }
+    function save(){ localStorage.setItem('tycoon_save_v25', JSON.stringify({money, rebirths, myItems, library, gameStartTime, normalSpawnCount, ownedDecor, currentDecor, currentLang, bgmVol: bgm.volume, seVol: clickSound.volume})); }
+    function load(){ 
+        const d=JSON.parse(localStorage.getItem('tycoon_save_v25')); 
+        if(d){ 
+            money=d.money; rebirths=d.rebirths; myItems=d.myItems; library=d.library||{}; 
+            gameStartTime=d.gameStartTime||Date.now(); normalSpawnCount=d.normalSpawnCount||0; 
+            ownedDecor=d.ownedDecor||["default"]; currentDecor=d.currentDecor||"default"; 
+            currentLang=d.currentLang||"en";
+            // 音量復元
+            if(d.bgmVol !== undefined) {
+                bgm.volume = d.bgmVol;
+                document.getElementById('bgm-slider').value = d.bgmVol;
+                document.getElementById('bgm-val').innerText = Math.floor(d.bgmVol * 100) + "%";
+            }
+            if(d.seVol !== undefined) {
+                clickSound.volume = d.seVol;
+                document.getElementById('se-slider').value = d.seVol;
+                document.getElementById('se-val').innerText = Math.floor(d.seVol * 100) + "%";
+            }
+        } 
+        refresh(); 
+    }
 
     load(); animate(0);
 </script>
