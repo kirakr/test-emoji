@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Cosmic Tycoon - Rebirth Helper Edition</title>
+    <title>3D Cosmic Tycoon - Mutation Pod Edition</title>
     <style>
         :root { 
             --neon: #0f8; --accent: #a335ee; --gold: #ffeb3b; --gray: #444; --danger: #ff4444; 
             --bg: rgba(5,5,15,0.95); --lucky: #00ffff;
-            /* 基準となるフォントサイズを画面高に対して設定 */
             font-size: 1.5vh; 
         }
         body { 
@@ -36,6 +35,7 @@
         .hud-value { font-size: 2.2rem; font-weight: 900; }
         #fever-timer { font-size: 1.2rem; margin-top: 1vh; font-weight: bold; }
         #box-timer { font-size: 1.1rem; margin-top: 0.5vh; color: var(--lucky); font-weight: bold; }
+        #mutation-timer-hud { font-size: 1.1rem; margin-top: 0.5vh; color: #e91e63; font-weight: bold; }
 
         .top-right-area { position: absolute; top: 3vh; right: 2vw; pointer-events: auto; }
         #settings-toggle { 
@@ -47,9 +47,8 @@
             position: absolute; top: 9vh; right: 0; background: var(--bg); border: 0.3vh solid var(--accent);
             padding: 2vh; border-radius: 2vh; display: none; flex-direction: column; gap: 1.5vh; min-width: 15vw;
         }
-        .menu-btn { width: 100%; padding: 1.5vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: 900; color: white; font-size: 1.2rem; }
+        .menu-btn { width: 100%; padding: 1.5vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: 900; color: white; font-size: 1.2rem; transition: 0.3s; }
         
-        /* Volume Sliders Style */
         .volume-control { display: flex; flex-direction: column; gap: 0.5vh; padding: 0.5vh 0; }
         .volume-control label { font-size: 0.8rem; color: var(--gold); display: flex; justify-content: space-between; }
         .volume-control input { cursor: pointer; accent-color: var(--neon); }
@@ -84,7 +83,6 @@
         
         .shop-item { background: rgba(255,255,255,0.05); border: 0.2vh solid #444; border-radius: 2vh; padding: 2vh; text-align: center; transition: 0.3s; }
         .shop-buy-btn { width: 100%; margin-top: 1vh; padding: 1vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: bold; background: var(--gold); color: #000; font-size: 1rem; }
-        /* お金が足りない時のボタン用スタイル */
         .shop-buy-btn.locked { background: #444 !important; color: #888 !important; cursor: not-allowed; opacity: 0.7; }
 
         #msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 6vh; font-weight: 900; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 300; text-shadow: 0 0 2vh #fff; }
@@ -100,7 +98,6 @@
         .stats-table th, .stats-table td { border: 0.1vh solid #444; padding: 1.2vh; text-align: left; }
         .stats-table th { background: rgba(163,53,238,0.3); color: var(--gold); }
 
-        /* レインボーキャラ用の図鑑スタイル */
         .rainbow-card {
             background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000) !important;
             background-size: 400% 400% !important;
@@ -113,9 +110,7 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .rainbow-card * {
-            text-shadow: 0.1vh 0.1vh 0.2vh #000;
-        }
+        .rainbow-card * { text-shadow: 0.1vh 0.1vh 0.2vh #000; }
     </style>
 </head>
 <body>
@@ -129,7 +124,7 @@
             <button class="menu-btn" style="background:var(--accent)" onclick="toggleLib()" id="btn-archive">📖 ARCHIVE</button>
             <button class="menu-btn" style="background:#ff9800" onclick="toggleShop()" id="btn-shop">🛍️ SHOP</button>
             <button class="menu-btn" style="background:#2196F3" onclick="toggleStats()" id="btn-stats">📊 STATS</button>
-            <button class="menu-btn" style="background:#4caf50" onclick="toggleLanguage()" id="btn-lang">🌐 JP / EN</button>
+            <button class="menu-btn" style="background:#e91e63" onclick="startMutationMode()" id="btn-mutate">🧬 MUTATION POD</button>
             
             <div class="volume-control">
                 <label><span>BGM</span><span id="bgm-val">50%</span></label>
@@ -148,10 +143,11 @@
         <div style="color:var(--neon)">PPS: <span class="hud-value">$<span id="pps">0</span>/s</span></div>
         <div style="color:var(--accent)"><span id="txt-rebirth-label">REBIRTH</span>: <span class="hud-value"><span id="rebirth-lv">0</span></span></div>
         <div id="box-timer">Secret Box: 0 / 20</div>
+        <div id="mutation-timer-hud">Mutation Pod: Ready</div>
         <div id="fever-timer">Next Fever: --:--</div>
     </div>
 
-    <button id="discard-btn" onclick="discardSelected()">🗑️ SALE</button>
+    <button id="discard-btn" onclick="discardSelected()">🗑️ DISCARD FOR 50%</button>
 
     <div id="lib-window" class="window-base">
         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:2vh;">
@@ -214,7 +210,6 @@
         clickSound.play().catch(() => {});
     }
 
-    // グローバル音量設定用関数
     window.updateBgmVolume = (val) => {
         bgm.volume = val;
         document.getElementById('bgm-val').innerText = Math.floor(val * 100) + "%";
@@ -242,12 +237,15 @@
     let ownedDecor = ["default"];
     let currentDecor = "default";
     let currentLang = "en"; 
+    
+    let isMutationMode = false;
+    let lastMutationTime = 0; // Epoch ms
 
-    // 追加：宇宙船パーツレベル
-    let shipParts = { engine: 0, armor: 0 };
-    const partConfig = {
-        engine: { name: "Engine", baseCost: 100000, maxLv: 10, bonus: 0.1, emoji: "🚀", desc_en: "PPS +10%", desc_jp: "PPS +10%" },
-        armor: { name: "Armor", baseCost: 100000, maxLv: 20, bonus: 0.1, emoji: "🛡️", desc_en: "Resell +10%", desc_jp: "売却額 +10%" }
+    let currentInvasion = null; 
+    const invasionTypes = {
+        blood: { name: "BLOOD", color: "#ff0000", bg: 0x330000, mult: 2, prob: 0.5 },
+        ice:   { name: "FROZEN", color: "#00ffff", bg: 0x001133, mult: 3, prob: 0.4 },
+        angel: { name: "ANGEL",  color: "#ffffff", bg: 0x333333, mult: 4, prob: 0.1 }
     };
 
     const i18n = {
@@ -256,7 +254,7 @@
             cash: "CASH", rebirth: "REBIRTH", nextFever: "Next Fever", secretBox: "Secret Box", collect: "COLLECT",
             close: "CLOSE", libTitle: "COLLECTION", shopTitle: "GALAXY SHOP", statsTitle: "PROBABILITY / STATS",
             spawnProb: "Normal Spawn Probability", feverProb: "Fever Spawn Probability", boxProb: "Secret Box Contents", rarity: "Rarity", chance: "Chance", item: "Item",
-            cost: "Cost", required: "Required", maxRebirth: "MAX REBIRTH REACHED", discard: "🗑️ SALE",
+            cost: "Cost", required: "Required", maxRebirth: "MAX REBIRTH REACHED", discard: "🗑️ DISCARD FOR 50%",
             msgNew: "NEW!", msgNoSlots: "NO SLOTS LEFT!", msgLucky: "LUCKY GET!!", msgFever: "🔥 FEVER STARTED !!", msgSold: "売却しました"
         },
         jp: {
@@ -264,7 +262,7 @@
             cash: "所持金", rebirth: "転生レベル", nextFever: "次回のフィーバー", secretBox: "シークレット箱", collect: "回収",
             close: "閉じる", libTitle: "コレクション", shopTitle: "ギャラクシーショップ", statsTitle: "出現確率・内訳",
             spawnProb: "通常スポーン確率", feverProb: "フィーバー中確率", boxProb: "シークレットボックス内訳", rarity: "レアリティ", chance: "確率", item: "内容",
-            cost: "費用", required: "必要条件", maxRebirth: "最大レベルに達しました", discard: "🗑️ SALE",
+            cost: "費用", required: "必要条件", maxRebirth: "最大レベルに達しました", discard: "🗑️ 50%で売却",
             msgNew: "新発見!", msgNoSlots: "スロットが一杯です!", msgLucky: "ラッキー獲得!!", msgFever: "🔥 フィーバー突入 !!", msgSold: "売却しました"
         }
     };
@@ -328,7 +326,7 @@
         "rare": [
             {e:"🧙", n:"Mage"},{e:"🏇", n:"Knight"},{e:"🧝", n:"Elf"},{e:"🧜", n:"Siren"},{e:"🐺", n:"Wolf"},{e:"🧛", n:"Vampire"},{e:"🦉", n:"Owl"},{e:"🦁", n:"Lion"},{e:"🐻", n:"Bear"},{e:"🦅", n:"Eagle"},
             {e:"🐗", n:"Boar"},{e:"🦄", n:"Pony"},{e:"FOX", n:"Fox"},{e:"🐼", n:"Panda"},{e:"🐪", n:"Camel"},{e:"🦘", n:"Kangaroo"},{e:"豹", n:"Leopard"},{e:"🦒", n:"Giraffe"},{e:"🦓", n:"Zebra"},{e:"🐃", n:"Buffalo"},
-            {e:"🦏", n:"Rhino"},{e:"🦛", n:"Hippo"},{e:"🐘", n:"Elephant"},{e:"鯊", n:"Shark"},{e:"鯨", n:"Whale"},{e:"🐬", n:"Dolphin"},{e:"🐊", n:"Croc"},{e:"蠍", n:"Scorpion"},
+            {e:"🦏", n:"Rhino"},{e:"🦛", n:"Hippo"},{e:"🐘", n:"Elephant"},{e:"🦈", n:"Shark"},{e:"🐋", n:"Whale"},{e:"🐬", n:"Dolphin"},{e:"🐊", n:"Croc"},{e:"蠍", n:"Scorpion"},
             {e:"🏹", n:"Archer"},{e:"🛡️", n:"Guard"},{e:"🔨", n:"Smith"},{e:"🧪", n:"Alchemist"},{e:"📜", n:"Scholar"},{e:"🎻", n:"Bard"},{e:"🍳", n:"Chef"},{e:"🚜", n:"Farmer"},{e:"⛏️", n:"Miner"},
             {e:"🗡️", n:"Dagger"},{e:"⚗️", n:"Flask"},{e:"📡", n:"Dish"},{e:"🛰️", n:"Satellite"},{e:"🧭", n:"Compass"},{e:"🌡️", n:"Meter"},{e:"🔋", n:"Battery"},{e:"🔌", n:"Plug"},{e:"💡", n:"Bulb"},{e:"🧲", n:"Magnet"}
         ],
@@ -403,43 +401,67 @@
     window.addEventListener('mousedown', (e) => {
         if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
         raycaster.setFromCamera(mouse, camera);
-        for(let g of conveyorGroups){
-            if(raycaster.intersectObjects(g.children).length>0){
-                if(g.userData.isBox) {
+        
+        if(!isMutationMode) {
+            for(let g of conveyorGroups){
+                if(raycaster.intersectObjects(g.children).length>0){
+                    if(g.userData.isBox) {
+                        const empty = myItems.indexOf(null);
+                        const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
+                        if(empty === -1 || empty >= unlocked) {
+                            showPopup(i18n[currentLang].msgNoSlots, "#ff4444");
+                            return;
+                        }
+                        if(money >= g.userData.cost) {
+                            money -= g.userData.cost;
+                            playClick();
+                            scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g);
+                            openBox();
+                        } return;
+                    }
                     const empty = myItems.indexOf(null);
                     const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
-                    if(empty === -1 || empty >= unlocked) {
-                        showPopup(i18n[currentLang].msgNoSlots, "#ff4444");
-                        return;
-                    }
-                    if(money >= g.userData.cost) {
-                        money -= g.userData.cost;
+                    const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
+                    if(money >= g.userData.cost && empty !== -1 && empty < unlocked){
+                        money -= g.userData.cost; 
                         playClick();
-                        scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g);
-                        openBox();
+                        myItems[empty] = {...g.userData, stored:0};
+                        const finalVal = (g.userData.val * (g.userData.luckyMult || 1)) * mult;
+                        
+                        const libKey = g.userData.invasionType ? `${g.userData.e}_${g.userData.invasionType}` : g.userData.e;
+                        if(!library[libKey] || finalVal > library[libKey].maxVal) {
+                            library[libKey] = { 
+                                n: g.userData.n, 
+                                e: g.userData.e, 
+                                maxVal: finalVal, 
+                                isLucky: (g.userData.luckyMult > 1), 
+                                luckyMult: g.userData.luckyMult,
+                                invasionType: g.userData.invasionType
+                            };
+                        }
+                        if(g.userData.luckyMult > 1) showPopup(i18n[currentLang].msgLucky, "#00ffff");
+                        scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g); refresh();
                     } return;
                 }
-                const empty = myItems.indexOf(null);
-                const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
-                const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
-                if(money >= g.userData.cost && empty !== -1 && empty < unlocked){
-                    money -= g.userData.cost; 
-                    playClick();
-                    myItems[empty] = {...g.userData, stored:0};
-                    const finalVal = (g.userData.val * (g.userData.luckyMult || 1)) * mult;
-                    if(!library[g.userData.e] || finalVal > library[g.userData.e].maxVal) {
-                        library[g.userData.e] = { n: g.userData.n, maxVal: finalVal, isLucky: (g.userData.luckyMult > 1), luckyMult: g.userData.luckyMult };
-                    }
-                    if(g.userData.luckyMult > 1) showPopup(i18n[currentLang].msgLucky, "#00ffff");
-                    scene.remove(g); conveyorGroups = conveyorGroups.filter(x=>x!==g); refresh();
-                } return;
             }
         }
+
         const hits = raycaster.intersectObjects(slotObjects);
         if(hits.length>0){
             const idx = hits[0].object.userData.slotIndex;
             const unlocked = (rebirths >= 4) ? 16 : 8 + rebirths * 2;
             if(idx >= unlocked) return;
+
+            if(isMutationMode) {
+                if(myItems[idx]) {
+                    mutateCharacter(idx);
+                } else {
+                    isMutationMode = false;
+                    showPopup("CANCELED", "#888");
+                }
+                return;
+            }
+
             if(selectedIdx === -1){ if(myItems[idx]) selectedIdx = idx; } 
             else {
                 if(idx === selectedIdx){ 
@@ -456,8 +478,59 @@
                 }
             }
             refresh();
-        } else { selectedIdx = -1; refresh(); }
+        } else { 
+            if(isMutationMode) { isMutationMode = false; showPopup("CANCELED", "#888"); }
+            selectedIdx = -1; refresh(); 
+        }
     });
+
+    window.startMutationMode = () => {
+        const now = Date.now();
+        const wait = 30 * 60 * 1000;
+        if(now - lastMutationTime < wait) {
+            return;
+        }
+        isMutationMode = true;
+        showPopup("SELECT CHARACTER TO MUTATE", "#e91e63");
+        toggleSettings();
+    };
+
+    function mutateCharacter(idx) {
+        const it = myItems[idx];
+        if(it.isMutated) {
+            showPopup("ALREADY MUTATED!", "#ff4444");
+            isMutationMode = false;
+            return;
+        }
+
+        const r = Math.random() * 100;
+        let type = "blood", lMult = 1;
+        
+        if (r < 40) { type = "blood"; lMult = 1; }
+        else if (r < 70) { type = "ice"; lMult = 1; }
+        else if (r < 90) { type = "angel"; lMult = 1; }
+        else if (r < 95) { type = null; lMult = 10 + Math.floor(Math.random()*40); }
+        else if (r < 98) { type = "blood"; lMult = 10 + Math.floor(Math.random()*40); }
+        else if (r < 99.9) { type = "ice"; lMult = 10 + Math.floor(Math.random()*40); }
+        else { type = "angel"; lMult = 50 + Math.floor(Math.random()*50); }
+
+        it.invasionType = type;
+        it.luckyMult = Math.max(it.luckyMult, lMult);
+        it.isMutated = true;
+        lastMutationTime = Date.now();
+        isMutationMode = false;
+
+        const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
+        const finalPPS = (it.val * it.luckyMult) * mult;
+        const libKey = type ? `${it.e}_${type}` : it.e;
+        if(!library[libKey] || finalPPS > library[libKey].maxVal) {
+            library[libKey] = { n: it.n, e: it.e, maxVal: finalPPS, isLucky: (it.luckyMult > 1), luckyMult: it.luckyMult, invasionType: type };
+        }
+
+        playClick();
+        showPopup(`MUTATION SUCCESS: ${type ? type.toUpperCase() : 'LUCKY'}!`, "#e91e63");
+        refresh();
+    }
 
     function spawn() {
         if(!isFeverActive) {
@@ -470,18 +543,11 @@
         }
         const elapsed = (Date.now() - gameStartTime) / 1000, cycle = elapsed % FEVER_INTERVAL;
         const activeTable = isFeverActive ? feverChances : rarities;
-        
         let isLucky = false;
-        if(isFeverActive) {
-            if(!luckySpawnedInFever) { 
-                const timeLeft = FEVER_DURATION - cycle;
-                if(Math.random() < (1.0 / (timeLeft + 1)) || timeLeft < 5) { isLucky = true; luckySpawnedInFever = true; }
-            }
-        } else {
-            // 通常時も1%でラッキー変異
-            if(Math.random() < 0.01) isLucky = true;
+        if(isFeverActive && !luckySpawnedInFever) { 
+            const timeLeft = FEVER_DURATION - cycle;
+            if(Math.random() < (1.0 / (timeLeft + 1)) || timeLeft < 5) { isLucky = true; luckySpawnedInFever = true; }
         }
-
         let rand = Math.random()*100, cum=0, r=activeTable[0];
         for(let x of activeTable){ cum+=x.chance; if(rand<=cum){ r=x; break; } }
         const list = charData[r.name];
@@ -490,16 +556,32 @@
 
         let variance = 0.85 + Math.random() * 0.3;
         let baseVal = Math.floor(r.baseValue * variance);
+        
+        if(currentInvasion) {
+            baseVal *= invasionTypes[currentInvasion].mult;
+        }
+
         if(r.name === "original") baseVal = 11111111 + Math.floor(Math.random() * (99999999 - 11111111));
         const finalCost = Math.floor(r.basePrice * (r.name === "original" ? 1 : variance));
         const luckyMult = isLucky ? (2 + Math.floor(Math.random()*49)) : 1;
-        const g = new THREE.Group(); g.add(createEmoji(d.e));
+        
+        let emojiFilter = null;
+        if(currentInvasion === "blood") emojiFilter = "#ff0000";
+        if(currentInvasion === "ice")   emojiFilter = "#00ffff";
+        if(currentInvasion === "angel") emojiFilter = "#ffffff";
+
+        const g = new THREE.Group(); g.add(createEmoji(d.e, emojiFilter));
         const subTxt = isLucky ? `★LUCKY x${luckyMult}★ $${formatValue(finalCost)}` : `[${r.name}] $${formatValue(finalCost)} (+$${formatValue(baseVal)}/s)`;
-        const lbl = createLabel(d.n, subTxt, isLucky ? "#00ffff" : r.color, isLucky); 
+        
+        const libKey = currentInvasion ? `${d.e}_${currentInvasion}` : d.e;
+        const displayName = library[libKey] ? `${d.n} ✔` : d.n;
+        
+        const lbl = createLabel(displayName, subTxt, isLucky ? "#00ffff" : r.color, isLucky); 
         lbl.position.y=7; lbl.material.opacity = 1; g.add(lbl);
         g.position.set(-28, 2.5, -55);
         const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(d.n);
-        g.userData = { e:d.e, n:d.n, rKey:r.name, cost:finalCost, val:baseVal, luckyMult:luckyMult, offsetY: 0, isRequired };
+        g.userData = { e:d.e, n:d.n, rKey:r.name, cost:finalCost, val:baseVal, luckyMult:luckyMult, offsetY: 0, isRequired, invasionType: currentInvasion };
+        
         if(isRequired) {
             const ring = new THREE.Mesh(new THREE.TorusGeometry(4, 0.2, 16, 100), new THREE.MeshBasicMaterial({ color: 0xa335ee }));
             ring.rotation.x = Math.PI/2; g.add(ring);
@@ -507,7 +589,7 @@
         }
         if(isLucky) {
             const aura = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.15, 8, 50), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 }));
-            aura.rotation.x = Math.PI/2; g.add(aura);
+            aura.rotation.x = Math.PI/2; aura.position.y = -0.5; g.add(aura);
             g.userData.isLuckyEffect = true;
             showPopup("LUCKY INBOUND!", "#00ffff");
         } else if(r.name === "legend" || r.name === "secret" || r.name === "original") {
@@ -564,11 +646,12 @@
         myItems[empty] = { 
             e:d.e, n:d.n, rKey:rarName, 
             cost: (specificName === "Soccer Ball" ? 0 : rar.basePrice), 
-            val:baseVal, luckyMult:luckyM, stored:0 
+            val:baseVal, luckyMult:luckyM, stored:0,
+            invasionType: null 
         };
         const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
         const finalVal = (baseVal * luckyM) * mult;
-        if(!library[d.e] || finalVal > library[d.e].maxVal) library[d.e] = { n: d.n, maxVal: finalVal, isLucky: (luckyM > 1), luckyMult: luckyM };
+        if(!library[d.e] || finalVal > library[d.e].maxVal) library[d.e] = { n: d.n, e: d.e, maxVal: finalVal, isLucky: (luckyM > 1), luckyMult: luckyM };
         showPopup(`GOT ${d.n} !!`, rar.color); refresh();
     }
 
@@ -584,20 +667,26 @@
         });
 
         myItems.forEach((it, i) => {
-            const identity = it ? `${it.n}_${it.luckyMult}` : null;
+            const identity = it ? `${it.n}_${it.luckyMult}_${it.invasionType}_${it.isMutated}` : null;
             if (charIdentity[i] !== identity) {
-                if (charInSlots[i]) {
-                    scene.remove(charInSlots[i]);
-                    charInSlots[i] = null;
-                }
+                if (charInSlots[i]) { scene.remove(charInSlots[i]); charInSlots[i] = null; }
                 if (it) {
                     const g = new THREE.Group();
-                    g.add(createEmoji(it.e));
+                    let eCol = null;
+                    if(it.invasionType === "blood") eCol = "#ff0000";
+                    if(it.invasionType === "ice")   eCol = "#00ffff";
+                    if(it.invasionType === "angel") eCol = "#ffffff";
+                    
+                    g.add(createEmoji(it.e, eCol));
                     const isL = it.luckyMult > 1;
                     const isRequired = rebirths < rebirthRequirements.length && rebirthRequirements[rebirths].includes(it.n);
                     const pps = (it.val * it.luckyMult) * mult;
                     const rarColor = rarities.find(r => r.name === it.rKey).color;
-                    const lbl = createLabel(it.n, `${isL ? '★LUCKY★ ' : ''}+$${formatValue(pps)}/s`, isL ? "#00ffff" : rarColor, isL);
+                    
+                    let suffix = isL ? '★LUCKY★ ' : '';
+                    if(it.invasionType) suffix += `[${it.invasionType.toUpperCase()}] `;
+                    
+                    const lbl = createLabel(it.n, `${suffix}+$${formatValue(pps)}/s`, isL ? "#00ffff" : rarColor, isL);
                     lbl.position.y = 7; g.add(lbl);
                     g.position.copy(slotObjects[i].position);
                     g.position.y = 4;
@@ -623,7 +712,6 @@
         document.getElementById('btn-archive').innerText = L.archive;
         document.getElementById('btn-shop').innerText = L.shop;
         document.getElementById('btn-stats').innerText = L.stats;
-        document.getElementById('btn-lang').innerText = L.lang;
         document.getElementById('btn-full').innerText = L.full;
         document.getElementById('btn-reset').innerText = L.reset;
         document.getElementById('txt-cash').innerText = L.cash;
@@ -653,9 +741,19 @@
         save();
     }
 
-    function createEmoji(e){
+    function createEmoji(e, fillColor = null){
         const canvas = document.createElement('canvas'); canvas.width=256; canvas.height=256;
-        const ctx = canvas.getContext('2d'); ctx.font="220px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(e,128,128);
+        const ctx = canvas.getContext('2d'); ctx.font="220px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; 
+        
+        if(fillColor) {
+            ctx.fillStyle = fillColor;
+            ctx.fillText(e, 128, 128);
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.fillRect(0,0,256,256);
+        } else {
+            ctx.fillText(e,128,128);
+        }
+        
         const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas)}));
         sp.scale.set(5,5,1); return sp;
     }
@@ -687,20 +785,17 @@
             if(g.userData.isLuckyEffect && g.children[1].material.map) updateRainbowLabel(g.children[1], rainbow);
         });
         const mult = (rebirths === 5) ? 2 : (rebirths >= 6) ? 3 : 1;
-        // 追加：Engine倍率の適用
-        const engineBonus = 1 + (shipParts.engine * partConfig.engine.bonus);
-
         const isTick = (t - lastIncomeTick >= 1000);
         let pending = 0, currentPPS = 0;
         charInSlots.forEach((g,i)=>{
             if(g && myItems[i]){
-                const perSec = ((myItems[i].val * myItems[i].luckyMult) * mult) * engineBonus;
-                if(isTick) myItems[i].stored += perSec;
-                pending += myItems[i].stored; currentPPS += perSec;
+                if(isTick) myItems[i].stored += (myItems[i].val * myItems[i].luckyMult) * mult;
+                pending += myItems[i].stored; currentPPS += (myItems[i].val * myItems[i].luckyMult) * mult;
                 const isS = (selectedIdx === i), isH = (hoveredIdx === i);
                 let bounce = 0;
+                // --- スロット内のキャラがリバース条件であっても跳ねないように修正 ---
                 if(g.userData.isRequired) {
-                    bounce = Math.abs(Math.sin(t * 0.005)) * 1.5;
+                    bounce = 0; // 以前は Math.abs(Math.sin(t * 0.005)) * 1.5; だったが、通常種と同様に固定
                     const ring = g.children.find(c => c.type === "Mesh" && c.geometry.type === "TorusGeometry");
                     if(ring) ring.rotation.z += 0.05;
                 }
@@ -714,13 +809,28 @@
         const fTimer = document.getElementById('fever-timer');
         const L = i18n[currentLang];
         if (cycle < FEVER_DURATION) {
-            if(!isFeverActive) { isFeverActive = true; luckySpawnedInFever = false; showPopup(L.msgFever, "#ffeb3b"); }
-            fTimer.innerText = `🔥 FEVER: ${Math.ceil(FEVER_DURATION - cycle)}s`;
-            fTimer.style.color = "#ffeb3b";
+            if(!isFeverActive) { 
+                isFeverActive = true; 
+                luckySpawnedInFever = false; 
+                if(Math.random() < 0.2) {
+                    let r = Math.random();
+                    if(r < 0.5) currentInvasion = "blood";
+                    else if(r < 0.9) currentInvasion = "ice";
+                    else currentInvasion = "angel";
+                    showPopup(`${invasionTypes[currentInvasion].name} INVASION !!`, invasionTypes[currentInvasion].color);
+                } else {
+                    currentInvasion = null;
+                    showPopup(L.msgFever, "#ffeb3b"); 
+                }
+            }
+            const timeStr = currentInvasion ? `💀 ${invasionTypes[currentInvasion].name}: ` : `🔥 FEVER: `;
+            fTimer.innerText = `${timeStr}${Math.ceil(FEVER_DURATION - cycle)}s`;
+            fTimer.style.color = currentInvasion ? invasionTypes[currentInvasion].color : "#ffeb3b";
             document.getElementById('fever-overlay').style.display = 'block';
-            scene.background.lerp(new THREE.Color(0x330011), 0.05); 
+            let targetBG = currentInvasion ? invasionTypes[currentInvasion].bg : 0x330011;
+            scene.background.lerp(new THREE.Color(targetBG), 0.05); 
         } else {
-            isFeverActive = false;
+            if(isFeverActive) { isFeverActive = false; currentInvasion = null; }
             const next = Math.ceil(FEVER_INTERVAL - cycle);
             fTimer.innerText = `${L.nextFever}: ${Math.floor(next/60)}:${(next%60).toString().padStart(2,'0')}`;
             fTimer.style.color = "#888";
@@ -728,6 +838,31 @@
             const targetColor = new THREE.Color((shopItems.find(x => x.id === currentDecor) || { color: 0x020205 }).color);
             scene.background.lerp(targetColor, 0.05);
         }
+
+        const mutHud = document.getElementById('mutation-timer-hud');
+        const mutBtn = document.getElementById('btn-mutate');
+        const wait = 30 * 60 * 1000;
+        const mutDiff = now - lastMutationTime;
+        if(mutDiff < wait) {
+            const rem = Math.ceil((wait - mutDiff) / 1000);
+            const m = Math.floor(rem / 60);
+            const s = rem % 60;
+            const timeText = `Wait: ${m}:${s.toString().padStart(2, '0')}`;
+            mutHud.innerText = `Mutation Pod: ${timeText}`;
+            mutHud.style.color = "#ff4444";
+            mutBtn.style.background = "#222";
+            mutBtn.style.color = "#555";
+            mutBtn.innerText = `🧬 ${timeText}`;
+            mutBtn.disabled = true;
+        } else {
+            mutHud.innerText = `Mutation Pod: Ready`;
+            mutHud.style.color = "#e91e63";
+            mutBtn.style.background = "#e91e63";
+            mutBtn.style.color = "white";
+            mutBtn.innerText = `🧬 MUTATION POD`;
+            mutBtn.disabled = false;
+        }
+
         document.getElementById('box-timer').innerText = `${L.secretBox}: ${normalSpawnCount} / 20`;
         if(isTick) lastIncomeTick = t;
         document.getElementById('money').innerText = formatValue(money);
@@ -738,7 +873,7 @@
         let canR = (rebirths < 6) && (money >= rebirthCost) && (rebirths < rebirthRequirements.length) && rebirthRequirements[rebirths].every(name => myItems.some(it => it && it.n === name));
         document.getElementById('rebirth-btn').className = canR ? 'available' : 'locked';
         document.getElementById('rebirth-btn').disabled = !canR;
-        if(t - lastS > (isFeverActive ? 1500 : 3500)){ spawn(); lastS=t; }
+        if(t - lastS > (isFeverActive ? 1500 : 3500)){ if(!isMutationMode) spawn(); lastS=t; }
         renderer.render(scene, camera);
         
         if(document.getElementById('shop-window').style.display === 'flex') {
@@ -764,35 +899,18 @@
         sp.material.map.needsUpdate = true;
     }
 
-    function applyDecor(id) {
-        currentDecor = id;
-    }
-
+    function applyDecor(id) { currentDecor = id; }
     window.buyDecor = (id, cost) => {
         if (money >= cost) {
             money -= cost; ownedDecor.push(id); playClick(); showPopup("PURCHASED!", "#ffeb3b"); renderShop(); refresh();
         } else { showPopup("NOT ENOUGH CASH!", "#ff4444"); }
     };
-
     window.useDecor = (id) => { applyDecor(id); playClick(); renderShop(); save(); };
 
     window.toggleSettings = () => { const m = document.getElementById('settings-menu'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
     window.toggleFullscreen = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); toggleSettings(); };
     window.resetGame = () => { if(confirm("RESET ALL?")) { localStorage.clear(); location.reload(); } };
-
-    window.discardSelected = () => { 
-        if(selectedIdx !== -1 && myItems[selectedIdx]) { 
-            playClick(); 
-            // Armorボーナスの適用 (基本0.5倍に ArmorLv * 0.1加算。最大2.5倍 = 250%UP)
-            const armorBonus = 0.5 + (shipParts.armor * partConfig.armor.bonus);
-            money += Math.floor(myItems[selectedIdx].cost * armorBonus); 
-            myItems[selectedIdx] = null; 
-            selectedIdx = -1; 
-            refresh(); 
-            showPopup(i18n[currentLang].msgSold, "#ff4444"); 
-        } 
-    };
-
+    window.discardSelected = () => { if(selectedIdx !== -1 && myItems[selectedIdx]) { playClick(); money += Math.floor(myItems[selectedIdx].cost / 2); myItems[selectedIdx] = null; selectedIdx = -1; refresh(); showPopup(i18n[currentLang].msgSold, "#ff4444"); } };
     window.rebirth = () => { const cost = Math.pow(10, rebirths+5); if(money >= cost) { playClick(); money = 1000; rebirths++; myItems.fill(null); refresh(); showPopup("DIMENSION UP!", "#a335ee"); } };
     window.collectAll = () => { 
         let earned = 0;
@@ -800,17 +918,7 @@
         if(earned > 0) playClick(); refresh(); 
     };
 
-    window.getFreeBall = () => {
-        giveChar("normal", 1, "Soccer Ball");
-        showPopup("RESCUE BALL!", "#0f8");
-    };
-
-    window.toggleLanguage = () => {
-        currentLang = currentLang === 'en' ? 'jp' : 'en';
-        playClick();
-        refresh();
-        if(document.getElementById('stats-window').style.display === 'flex') renderStats();
-    };
+    window.getFreeBall = () => { giveChar("normal", 1, "Soccer Ball"); showPopup("RESCUE BALL!", "#0f8"); };
 
     window.toggleStats = () => {
         const w = document.getElementById('stats-window');
@@ -822,128 +930,61 @@
         const L = i18n[currentLang];
         const tableSpawn = document.getElementById('table-spawn');
         tableSpawn.innerHTML = `<tr><th>${L.rarity}</th><th>${L.chance}</th></tr>`;
-        rarities.forEach(r => {
-            tableSpawn.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`;
-        });
-
+        rarities.forEach(r => { tableSpawn.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`; });
         const tableFever = document.getElementById('table-fever');
         tableFever.innerHTML = `<tr><th>${L.rarity}</th><th>${L.chance}</th></tr>`;
-        feverChances.forEach(r => {
-            tableFever.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`;
-        });
-
+        feverChances.forEach(r => { tableFever.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`; });
         const tableBox = document.getElementById('table-box');
         tableBox.innerHTML = `<tr><th>${L.item}</th><th>${L.chance}</th></tr>`;
         const boxContents = [
-            { n: "+$5,000 Cash", p: "40%" },
-            { n: "Instant Fever", p: "20%" },
-            { n: "Epic Character", p: "20%" },
-            { n: "Cash x10", p: "8%" },
-            { n: "Legend Character", p: "6%" },
-            { n: "Secret Character", p: "6%" },
-            { n: "✨ Rebirth Helper", p: "5% (Special)" }
+            { n: "+$5,000 Cash", p: "40%" }, { n: "Instant Fever", p: "20%" }, { n: "Epic Character", p: "20%" }, { n: "Cash x10", p: "8%" }, { n: "Legend Character", p: "6%" }, { n: "Secret Character", p: "6%" }, { n: "✨ Rebirth Helper", p: "5% (Special)" }
         ];
-        boxContents.forEach(c => {
-            tableBox.innerHTML += `<tr><td>${c.n}</td><td>${c.p}</td></tr>`;
-        });
+        boxContents.forEach(c => { tableBox.innerHTML += `<tr><td>${c.n}</td><td>${c.p}</td></tr>`; });
     }
 
     function renderLib() {
         const grid = document.getElementById('lib-grid'); grid.innerHTML='';
-        rarities.forEach(rar => {
-            charData[rar.name].forEach(d => {
-                const found = library[d.e];
-                const div = document.createElement('div');
-                const cardClass = (found && found.isLucky) ? 'rainbow-card' : '';
-                const borderColor = found ? (found.isLucky ? 'transparent' : rar.color) : '#333';
-                const bgColor = found ? (found.isLucky ? 'transparent' : rar.color + '4D') : 'rgba(255,255,255,0.03)';
-
-                div.className = cardClass;
-                div.style.cssText = `background: ${bgColor}; aspect-ratio:1/1.2; border-radius:15px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:0.3vh solid ${borderColor}; position:relative; transition: 0.3s;`;
-                
-                // 倍率表記 (xXX) を追加
-                const luckyTag = (found && found.isLucky && found.luckyMult) ? `<div style="font-size:0.7rem; color:#fff; position:absolute; bottom:0.5vh; right:0.8vh; font-weight:bold; background:rgba(0,0,0,0.5); padding:2px 5px; border-radius:5px;">x${found.luckyMult}</div>` : '';
-
-                div.innerHTML = `
-                    <div style="font-size:0.8rem; color:${found && found.isLucky ? '#fff' : (found ? '#fff' : rar.color)}; position:absolute; top:0.8vh; font-weight:bold;">${rar.name.toUpperCase()}${found && found.isLucky ? ' ★' : ''}</div>
-                    <div style="font-size:3.5vh; filter:brightness(${found ? 1 : 0});">${d.e}</div>
-                    <div style="font-size:0.8rem; color:#fff; font-weight:bold; margin-top:0.5vh;">${found ? d.n : '???'}</div>
-                    <div style="font-size:0.7rem; color:${found && found.isLucky ? '#fff' : 'var(--gold)'}; margin-top:0.3vh;">${found ? '$'+formatValue(found.maxVal)+'/s' : '---'}</div>
-                    ${luckyTag}
-                `;
-                grid.appendChild(div);
-            });
+        rarities.forEach(rar => { charData[rar.name].forEach(d => { const found = library[d.e]; addCard(grid, d, rar, found); }); });
+        const invHeader = document.createElement('div');
+        invHeader.style.cssText = "grid-column: 1/-1; color:var(--danger); font-size:2rem; margin-top:3vh; border-bottom:1px solid #600;";
+        invHeader.innerText = "INVASION COLLECTION";
+        grid.appendChild(invHeader);
+        ["blood", "ice", "angel"].forEach(invType => {
+            const data = invasionTypes[invType];
+            rarities.forEach(rar => { charData[rar.name].forEach(d => { const key = `${d.e}_${invType}`; const found = library[key]; addCard(grid, d, {name: invType.toUpperCase(), color: data.color}, found, invType); }); });
         });
     }
 
-    // 追加：宇宙船パーツ購入処理
-    window.buyPart = (type) => {
-        const cfg = partConfig[type];
-        const curLv = shipParts[type];
-        if(curLv >= cfg.maxLv) return;
-        const cost = cfg.baseCost * Math.pow(2.5, curLv);
-        if(money >= cost) {
-            money -= cost;
-            shipParts[type]++;
-            playClick();
-            showPopup(`${cfg.name} UPGRADED!`, "var(--neon)");
-            renderShop();
-            save();
-        } else {
-            showPopup("NOT ENOUGH CASH!", "#ff4444");
-        }
-    };
+    function addCard(grid, d, rar, found, invType = null) {
+        const div = document.createElement('div');
+        const isLucky = found && found.isLucky;
+        const cardClass = isLucky ? 'rainbow-card' : '';
+        let borderColor = found ? (isLucky ? 'transparent' : rar.color) : '#333';
+        let bgColor = found ? (isLucky ? 'transparent' : rar.color + '4D') : 'rgba(255,255,255,0.03)';
+        div.className = cardClass;
+        div.style.cssText = `background: ${bgColor}; aspect-ratio:1/1.2; border-radius:15px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:0.3vh solid ${borderColor}; position:relative; transition: 0.3s;`;
+        const luckyTag = (found && isLucky) ? `<div style="font-size:0.7rem; color:#fff; position:absolute; bottom:0.5vh; right:0.8vh; font-weight:bold; background:rgba(0,0,0,0.5); padding:2px 5px; border-radius:5px;">x${found.luckyMult}</div>` : '';
+        let filterStyle = "";
+        if(found) {
+            if(invType === "blood") filterStyle = "filter: sepia(1) saturate(100) hue-rotate(-50deg);";
+            if(invType === "ice")   filterStyle = "filter: sepia(1) saturate(100) hue-rotate(140deg);";
+            if(invType === "angel") filterStyle = "filter: brightness(2) contrast(0) brightness(2);";
+        } else { filterStyle = "filter:brightness(0);"; }
+        div.innerHTML = `<div style="font-size:0.7rem; color:${found ? '#fff' : rar.color}; position:absolute; top:0.8vh; font-weight:bold;">${rar.name.toUpperCase()}</div><div style="font-size:3.5vh; ${filterStyle}">${d.e}</div><div style="font-size:0.8rem; color:#fff; font-weight:bold; margin-top:0.5vh;">${found ? d.n : '???'}</div><div style="font-size:0.7rem; color:var(--gold); margin-top:0.3vh;">${found ? '$'+formatValue(found.maxVal)+'/s' : '---'}</div>${luckyTag}`;
+        grid.appendChild(div);
+    }
 
     function renderShop() {
         const grid = document.getElementById('shop-grid'); grid.innerHTML = '';
-        
-        // 宇宙船パーツセクション
-        for(let key in partConfig) {
-            const cfg = partConfig[key];
-            const lv = shipParts[key];
-            const cost = cfg.baseCost * Math.pow(2.5, lv);
-            const isMax = lv >= cfg.maxLv;
-            const div = document.createElement('div'); div.className = 'shop-item';
-            div.style.borderColor = "var(--accent)";
-            div.innerHTML = `
-                <div style="font-size:3vh; margin-bottom:0.5vh;">${cfg.emoji}</div>
-                <h3 style="font-size:1rem; margin:0.5vh 0; color:var(--gold);">${cfg.name} [Lv.${lv}/${cfg.maxLv}]</h3>
-                <p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">${currentLang==='en'?cfg.desc_en:cfg.desc_jp}<br>Current: +${Math.round(lv*cfg.bonus*100)}%</p>
-                ${isMax ? 
-                    `<button class="shop-buy-btn locked" disabled>MAX LEVEL</button>` :
-                    `<button class="shop-buy-btn" data-cost="${cost}" onclick="buyPart('${key}')">$${formatValue(cost)}</button>`
-                }
-            `;
-            grid.appendChild(div);
-        }
-
-        const ballDiv = document.createElement('div'); ballDiv.className = 'shop-item';
-        ballDiv.style.borderColor = 'var(--neon)';
-        ballDiv.innerHTML = `
-            <div style="font-size:3vh; margin-bottom:0.5vh;">⚽</div>
-            <h3 style="font-size:1rem; margin:0.5vh 0; color:var(--neon);">Soccer Ball</h3>
-            <p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">Rescue: $1/s<br>FREE FOREVER</p>
-            <button class="shop-buy-btn free-btn" style="background:var(--neon);" onclick="getFreeBall()">FREE GET</button>
-        `;
+        const ballDiv = document.createElement('div'); ballDiv.className = 'shop-item'; ballDiv.style.borderColor = 'var(--neon)';
+        ballDiv.innerHTML = `<div style="font-size:3vh; margin-bottom:0.5vh;">⚽</div><h3 style="font-size:1rem; margin:0.5vh 0; color:var(--neon);">Soccer Ball</h3><p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">Rescue: $1/s<br>FREE FOREVER</p><button class="shop-buy-btn free-btn" style="background:var(--neon);" onclick="getFreeBall()">FREE GET</button>`;
         grid.appendChild(ballDiv);
-
         const defDiv = document.createElement('div'); defDiv.className = 'shop-item';
         defDiv.innerHTML = `<h3>Normal Space</h3><p>Default</p><button class="shop-buy-btn ${currentDecor==='default'?'bought':''}" onclick="useDecor('default')">${currentDecor==='default'?'ACTIVE':'USE'}</button>`;
         grid.appendChild(defDiv);
-
         shopItems.forEach(item => {
-            const isOwned = ownedDecor.includes(item.id);
-            const canAfford = money >= item.cost;
-            const div = document.createElement('div'); div.className = 'shop-item';
-            div.innerHTML = `
-                <div style="width:100%; height:4vh; background-color:#${item.color.toString(16).padStart(6,'0')}; border-radius:1vh; margin-bottom:1vh;"></div>
-                <h3 style="font-size:1rem; margin:0.5vh 0;">${item.name}</h3>
-                <p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">${item.desc}</p>
-                ${isOwned ? 
-                    `<button class="shop-buy-btn ${currentDecor===item.id?'bought':''}" onclick="useDecor('${item.id}')">${currentDecor===item.id?'ACTIVE':'USE'}</button>` :
-                    `<button class="shop-buy-btn ${!canAfford?'locked':''}" data-cost="${item.cost}" ${!canAfford?'disabled':''} onclick="buyDecor('${item.id}', ${item.cost})">$${formatValue(item.cost)}</button>`
-                }
-            `;
+            const isOwned = ownedDecor.includes(item.id); const canAfford = money >= item.cost; const div = document.createElement('div'); div.className = 'shop-item';
+            div.innerHTML = `<div style="width:100%; height:4vh; background-color:#${item.color.toString(16).padStart(6,'0')}; border-radius:1vh; margin-bottom:1vh;"></div><h3 style="font-size:1rem; margin:0.5vh 0;">${item.name}</h3><p style="font-size:0.8rem; color:#aaa; margin:0.5vh 0;">${item.desc}</p>${isOwned ? `<button class="shop-buy-btn ${currentDecor===item.id?'bought':''}" onclick="useDecor('${item.id}')">${currentDecor===item.id?'ACTIVE':'USE'}</button>` : `<button class="shop-buy-btn ${!canAfford?'locked':''}" data-cost="${item.cost}" ${!canAfford?'disabled':''} onclick="buyDecor('${item.id}', ${item.cost})">$${formatValue(item.cost)}</button>`}`;
             grid.appendChild(div);
         });
     }
@@ -951,34 +992,16 @@
     window.toggleLib = () => { const w = document.getElementById('lib-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderLib(); };
     window.toggleShop = () => { const w = document.getElementById('shop-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderShop(); };
     function showPopup(t, c){ const e=document.getElementById('msg'); e.innerText=t; e.style.color=c; e.style.opacity=1; setTimeout(()=>e.style.opacity=0,1500); }
-    
-    function save(){ 
-        localStorage.setItem('tycoon_save_v25', JSON.stringify({
-            money, rebirths, myItems, library, gameStartTime, normalSpawnCount, 
-            ownedDecor, currentDecor, currentLang, shipParts, // 保存対象にパーツ追加
-            bgmVol: bgm.volume, seVol: clickSound.volume
-        })); 
-    }
-    
+    function save(){ localStorage.setItem('tycoon_save_mut', JSON.stringify({money, rebirths, myItems, library, gameStartTime, normalSpawnCount, ownedDecor, currentDecor, lastMutationTime, bgmVol: bgm.volume, seVol: clickSound.volume})); }
     function load(){ 
-        const d=JSON.parse(localStorage.getItem('tycoon_save_v25')); 
+        const d=JSON.parse(localStorage.getItem('tycoon_save_mut')); 
         if(d){ 
             money=d.money; rebirths=d.rebirths; myItems=d.myItems; library=d.library||{}; 
             gameStartTime=d.gameStartTime||Date.now(); normalSpawnCount=d.normalSpawnCount||0; 
             ownedDecor=d.ownedDecor||["default"]; currentDecor=d.currentDecor||"default"; 
-            currentLang=d.currentLang||"en";
-            shipParts=d.shipParts||{ engine: 0, armor: 0 }; // 読み込み
-            // 音量復元
-            if(d.bgmVol !== undefined) {
-                bgm.volume = d.bgmVol;
-                document.getElementById('bgm-slider').value = d.bgmVol;
-                document.getElementById('bgm-val').innerText = Math.floor(d.bgmVol * 100) + "%";
-            }
-            if(d.seVol !== undefined) {
-                clickSound.volume = d.seVol;
-                document.getElementById('se-slider').value = d.seVol;
-                document.getElementById('se-val').innerText = Math.floor(d.seVol * 100) + "%";
-            }
+            lastMutationTime=d.lastMutationTime||0;
+            if(d.bgmVol !== undefined) { bgm.volume = d.bgmVol; document.getElementById('bgm-slider').value = d.bgmVol; document.getElementById('bgm-val').innerText = Math.floor(d.bgmVol * 100) + "%"; }
+            if(d.seVol !== undefined) { clickSound.volume = d.seVol; document.getElementById('se-slider').value = d.seVol; document.getElementById('se-val').innerText = Math.floor(d.seVol * 100) + "%"; }
         } 
         refresh(); 
     }
