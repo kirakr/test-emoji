@@ -79,8 +79,18 @@
             width: 80vw; height: 70vh; background: var(--bg); border: 0.3vh solid var(--accent); 
             display: none; flex-direction: column; padding: 4vh; border-radius: 3vh; pointer-events: auto; z-index: 500; 
         }
-        #lib-grid, #shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15vh, 1fr)); gap: 2vh; overflow-y: auto; padding: 1vh; }
+        #lib-grid, #shop-grid, #mission-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(15vh, 1fr)); gap: 2vh; overflow-y: auto; padding: 1vh; }
+        #mission-list { grid-template-columns: 1fr; }
         
+        .mission-card { background: rgba(255,255,255,0.05); border: 0.2vh solid #444; border-radius: 2vh; padding: 2.5vh; display: flex; justify-content: space-between; align-items: center; }
+        .mission-info h4 { margin: 0; color: var(--gold); font-size: 1.4rem; }
+        .mission-info p { margin: 0.5vh 0; font-size: 1rem; color: #ccc; }
+        .mission-progress { font-size: 0.9rem; color: var(--neon); font-weight: bold; }
+        .claim-btn { padding: 1.5vh 3vw; border-radius: 1vh; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .claim-btn.ready { background: var(--neon); color: #000; }
+        .claim-btn.locked { background: #444; color: #888; cursor: not-allowed; }
+        .claim-btn.done { background: #222; color: #555; cursor: default; }
+
         .shop-item { background: rgba(255,255,255,0.05); border: 0.2vh solid #444; border-radius: 2vh; padding: 2vh; text-align: center; transition: 0.3s; }
         .shop-buy-btn { width: 100%; margin-top: 1vh; padding: 1vh; border: none; border-radius: 1vh; cursor: pointer; font-weight: bold; background: var(--gold); color: #000; font-size: 1rem; }
         .shop-buy-btn.locked { background: #444 !important; color: #888 !important; cursor: not-allowed; opacity: 0.7; }
@@ -123,7 +133,7 @@
         <div id="settings-menu">
             <button class="menu-btn" style="background:var(--accent)" onclick="toggleLib()" id="btn-archive">📖 ARCHIVE</button>
             <button class="menu-btn" style="background:#ff9800" onclick="toggleShop()" id="btn-shop">🛍️ SHOP</button>
-            <button class="menu-btn" style="background:#2196F3" onclick="toggleStats()" id="btn-stats">📊 STATS</button>
+            <button class="menu-btn" style="background:#4caf50" onclick="toggleMission()" id="btn-mission">🏆 MISSION</button>
             <button class="menu-btn" style="background:#e91e63" onclick="startMutationMode()" id="btn-mutate">🧬 MUTATION POD</button>
             
             <div class="volume-control">
@@ -165,19 +175,12 @@
         <div id="shop-grid"></div>
     </div>
 
-    <div id="stats-window" class="window-base">
+    <div id="mission-window" class="window-base">
         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:2vh;">
-            <div style="color:var(--gold); font-size:2.5rem; font-weight:bold;" id="txt-stats-title">PROBABILITY / STATS</div>
-            <button onclick="toggleStats()" style="background:var(--danger); color:white; border:none; padding:1.5vh 2vw; border-radius:1vh; cursor:pointer;" class="btn-close-ui">CLOSE</button>
+            <div style="color:var(--gold); font-size:2.5rem; font-weight:bold;">DAILY MISSIONS</div>
+            <button onclick="toggleMission()" style="background:var(--danger); color:white; border:none; padding:1.5vh 2vw; border-radius:1vh; cursor:pointer;">CLOSE</button>
         </div>
-        <div style="overflow-y: auto;">
-            <h3 style="color:var(--neon)" id="txt-spawn-prob">Spawn Probability</h3>
-            <table class="stats-table" id="table-spawn"></table>
-            <h3 style="color:#ffeb3b; margin-top:3vh;" id="txt-fever-prob">Fever Spawn Probability</h3>
-            <table class="stats-table" id="table-fever"></table>
-            <h3 style="color:var(--lucky); margin-top:3vh;" id="txt-box-prob">Secret Box Contents</h3>
-            <table class="stats-table" id="table-box"></table>
-        </div>
+        <div id="mission-list"></div>
     </div>
 
     <div class="collect-area">
@@ -246,6 +249,17 @@
         blood: { name: "BLOOD", color: "#ff0000", bg: 0x330000, mult: 2, prob: 0.5 },
         ice:   { name: "FROZEN", color: "#00ffff", bg: 0x001133, mult: 3, prob: 0.4 },
         angel: { name: "ANGEL",  color: "#ffffff", bg: 0x333333, mult: 4, prob: 0.1 }
+    };
+
+    // MISSION SYSTEM DATA
+    let missionData = {
+        lastReset: 0,
+        stats: { earnedToday: 0, boxOpenedToday: 0 },
+        states: [
+            { id: 0, done: false, target: 1000000 },
+            { id: 1, done: false, target: 5 },
+            { id: 2, done: false, target: 3 }
+        ]
     };
 
     const i18n = {
@@ -467,6 +481,7 @@
                 if(idx === selectedIdx){ 
                     if(myItems[idx].stored > 0) playClick();
                     money += myItems[idx].stored; 
+                    missionData.stats.earnedToday += myItems[idx].stored; // Mission Stat
                     myItems[idx].stored = 0; 
                     selectedIdx = -1; 
                 } 
@@ -613,6 +628,7 @@
     }
 
     function openBox() {
+        missionData.stats.boxOpenedToday++; // Mission Stat
         if(Math.random() < 0.05 && rebirths < rebirthRequirements.length) {
             const reqs = rebirthRequirements[rebirths];
             const targetName = reqs[Math.floor(Math.random() * reqs.length)];
@@ -711,7 +727,6 @@
         const L = i18n[currentLang];
         document.getElementById('btn-archive').innerText = L.archive;
         document.getElementById('btn-shop').innerText = L.shop;
-        document.getElementById('btn-stats').innerText = L.stats;
         document.getElementById('btn-full').innerText = L.full;
         document.getElementById('btn-reset').innerText = L.reset;
         document.getElementById('txt-cash').innerText = L.cash;
@@ -719,10 +734,6 @@
         document.getElementById('txt-collect').innerText = L.collect;
         document.getElementById('txt-lib-title').innerText = L.libTitle;
         document.getElementById('txt-shop-title').innerText = L.shopTitle;
-        document.getElementById('txt-stats-title').innerText = L.statsTitle;
-        document.getElementById('txt-spawn-prob').innerText = L.spawnProb;
-        document.getElementById('txt-fever-prob').innerText = L.feverProb;
-        document.getElementById('txt-box-prob').innerText = L.boxProb;
         document.getElementById('txt-rebirth-btn').innerText = L.rebirth;
         document.querySelectorAll('.btn-close-ui').forEach(b => b.innerText = L.close);
         document.getElementById('discard-btn').innerText = L.discard;
@@ -793,9 +804,8 @@
                 pending += myItems[i].stored; currentPPS += (myItems[i].val * myItems[i].luckyMult) * mult;
                 const isS = (selectedIdx === i), isH = (hoveredIdx === i);
                 let bounce = 0;
-                // --- スロット内のキャラがリバース条件であっても跳ねないように修正 ---
                 if(g.userData.isRequired) {
-                    bounce = 0; // 以前は Math.abs(Math.sin(t * 0.005)) * 1.5; だったが、通常種と同様に固定
+                    bounce = 0; 
                     const ring = g.children.find(c => c.type === "Mesh" && c.geometry.type === "TorusGeometry");
                     if(ring) ring.rotation.z += 0.05;
                 }
@@ -863,6 +873,14 @@
             mutBtn.disabled = false;
         }
 
+        // MISSION TICK (Daily Reset Check)
+        if(now - missionData.lastReset > 86400000) {
+            missionData.lastReset = now;
+            missionData.stats = { earnedToday: 0, boxOpenedToday: 0 };
+            missionData.states.forEach(s => s.done = false);
+            showPopup("MISSIONS RESET!", "#0f8");
+        }
+
         document.getElementById('box-timer').innerText = `${L.secretBox}: ${normalSpawnCount} / 20`;
         if(isTick) lastIncomeTick = t;
         document.getElementById('money').innerText = formatValue(money);
@@ -914,33 +932,77 @@
     window.rebirth = () => { const cost = Math.pow(10, rebirths+5); if(money >= cost) { playClick(); money = 1000; rebirths++; myItems.fill(null); refresh(); showPopup("DIMENSION UP!", "#a335ee"); } };
     window.collectAll = () => { 
         let earned = 0;
-        myItems.forEach(it=>{ if(it && it.stored > 0){ earned += it.stored; money+=it.stored; it.stored=0; } }); 
+        myItems.forEach(it=>{ if(it && it.stored > 0){ earned += it.stored; money+=it.stored; missionData.stats.earnedToday += it.stored; it.stored=0; } }); 
         if(earned > 0) playClick(); refresh(); 
     };
 
     window.getFreeBall = () => { giveChar("normal", 1, "Soccer Ball"); showPopup("RESCUE BALL!", "#0f8"); };
 
-    window.toggleStats = () => {
-        const w = document.getElementById('stats-window');
-        w.style.display = w.style.display==='flex'?'none':'flex';
-        if(w.style.display==='flex') renderStats();
+    window.toggleMission = () => {
+        const w = document.getElementById('mission-window');
+        w.style.display = w.style.display === 'flex' ? 'none' : 'flex';
+        if(w.style.display === 'flex') renderMissions();
     };
 
-    function renderStats() {
-        const L = i18n[currentLang];
-        const tableSpawn = document.getElementById('table-spawn');
-        tableSpawn.innerHTML = `<tr><th>${L.rarity}</th><th>${L.chance}</th></tr>`;
-        rarities.forEach(r => { tableSpawn.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`; });
-        const tableFever = document.getElementById('table-fever');
-        tableFever.innerHTML = `<tr><th>${L.rarity}</th><th>${L.chance}</th></tr>`;
-        feverChances.forEach(r => { tableFever.innerHTML += `<tr><td style="color:${r.color}">${r.name.toUpperCase()}</td><td>${r.chance}%</td></tr>`; });
-        const tableBox = document.getElementById('table-box');
-        tableBox.innerHTML = `<tr><th>${L.item}</th><th>${L.chance}</th></tr>`;
-        const boxContents = [
-            { n: "+$5,000 Cash", p: "40%" }, { n: "Instant Fever", p: "20%" }, { n: "Epic Character", p: "20%" }, { n: "Cash x10", p: "8%" }, { n: "Legend Character", p: "6%" }, { n: "Secret Character", p: "6%" }, { n: "✨ Rebirth Helper", p: "5% (Special)" }
+    function renderMissions() {
+        const list = document.getElementById('mission-list');
+        list.innerHTML = '';
+        const curRareCount = myItems.filter(it => it && ["rare", "epic", "legend", "secret", "original"].includes(it.rKey)).length;
+
+        const missions = [
+            { id: 0, title: "Capitalist", desc: "Earn $1M today", cur: missionData.stats.earnedToday, target: 1000000, reward: "Random Lucky Mutant" },
+            { id: 1, title: "Box Hunter", desc: "Open 5 Secret Boxes", cur: missionData.stats.boxOpenedToday, target: 5, reward: "Random Invasion Ticket" },
+            { id: 2, title: "Elite Squad", desc: "Place 3+ Rare characters", cur: curRareCount, target: 3, reward: "$100,000 Cash" }
         ];
-        boxContents.forEach(c => { tableBox.innerHTML += `<tr><td>${c.n}</td><td>${c.p}</td></tr>`; });
+
+        missions.forEach(m => {
+            const state = missionData.states[m.id];
+            const isReady = m.cur >= m.target && !state.done;
+            const emptyIdx = myItems.indexOf(null);
+            const slotReady = (m.id === 0) ? (emptyIdx !== -1 && emptyIdx < ((rebirths >= 4) ? 16 : 8 + rebirths * 2)) : true;
+            
+            const card = document.createElement('div');
+            card.className = 'mission-card';
+            card.innerHTML = `
+                <div class="mission-info">
+                    <h4>${m.title}</h4>
+                    <p>${m.desc}</p>
+                    <div class="mission-progress">${formatValue(m.cur)} / ${formatValue(m.target)}</div>
+                    <div style="font-size:0.8rem; color:var(--accent); margin-top:0.5vh;">Reward: ${m.reward}</div>
+                </div>
+                <button class="claim-btn ${state.done ? 'done' : (isReady && slotReady ? 'ready' : 'locked')}" 
+                    onclick="claimMission(${m.id})" ${state.done || !isReady || !slotReady ? 'disabled' : ''}>
+                    ${state.done ? 'DONE' : (isReady ? (slotReady ? 'CLAIM' : 'NO SLOTS') : 'LOCKED')}
+                </button>
+            `;
+            list.appendChild(card);
+        });
     }
+
+    window.claimMission = (id) => {
+        const state = missionData.states[id];
+        if(state.done) return;
+        playClick();
+        state.done = true;
+
+        if(id === 0) {
+            const rarKeys = Object.keys(charData);
+            const rk = rarKeys[Math.floor(Math.random() * rarKeys.length)];
+            giveChar(rk, 10 + Math.floor(Math.random()*40));
+            showPopup("LUCKY MUTANT RECEIVED!", "#00ffff");
+        } else if(id === 1) {
+            const r = Math.random() * 100;
+            if(r < 50) { gameStartTime = Date.now() - (FEVER_INTERVAL * 1000); showPopup("FEVER START!", "#ffeb3b"); }
+            else if(r < 80) { currentInvasion = "blood"; showPopup("BLOOD INVASION!", "#ff4444"); }
+            else if(r < 95) { currentInvasion = "ice"; showPopup("FROZEN INVASION!", "#00ffff"); }
+            else { currentInvasion = "angel"; showPopup("ANGEL INVASION!", "#fff"); }
+        } else if(id === 2) {
+            money += 100000;
+            showPopup("+$100,000 RECEIVED!", "#0f8");
+        }
+        renderMissions();
+        save();
+    };
 
     function renderLib() {
         const grid = document.getElementById('lib-grid'); grid.innerHTML='';
@@ -992,14 +1054,14 @@
     window.toggleLib = () => { const w = document.getElementById('lib-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderLib(); };
     window.toggleShop = () => { const w = document.getElementById('shop-window'); w.style.display = w.style.display==='flex'?'none':'flex'; if(w.style.display==='flex') renderShop(); };
     function showPopup(t, c){ const e=document.getElementById('msg'); e.innerText=t; e.style.color=c; e.style.opacity=1; setTimeout(()=>e.style.opacity=0,1500); }
-    function save(){ localStorage.setItem('tycoon_save_mut', JSON.stringify({money, rebirths, myItems, library, gameStartTime, normalSpawnCount, ownedDecor, currentDecor, lastMutationTime, bgmVol: bgm.volume, seVol: clickSound.volume})); }
+    function save(){ localStorage.setItem('tycoon_save_mut', JSON.stringify({money, rebirths, myItems, library, gameStartTime, normalSpawnCount, ownedDecor, currentDecor, lastMutationTime, missionData, bgmVol: bgm.volume, seVol: clickSound.volume})); }
     function load(){ 
         const d=JSON.parse(localStorage.getItem('tycoon_save_mut')); 
         if(d){ 
             money=d.money; rebirths=d.rebirths; myItems=d.myItems; library=d.library||{}; 
             gameStartTime=d.gameStartTime||Date.now(); normalSpawnCount=d.normalSpawnCount||0; 
             ownedDecor=d.ownedDecor||["default"]; currentDecor=d.currentDecor||"default"; 
-            lastMutationTime=d.lastMutationTime||0;
+            lastMutationTime=d.lastMutationTime||0; missionData=d.missionData||missionData;
             if(d.bgmVol !== undefined) { bgm.volume = d.bgmVol; document.getElementById('bgm-slider').value = d.bgmVol; document.getElementById('bgm-val').innerText = Math.floor(d.bgmVol * 100) + "%"; }
             if(d.seVol !== undefined) { clickSound.volume = d.seVol; document.getElementById('se-slider').value = d.seVol; document.getElementById('se-val').innerText = Math.floor(d.seVol * 100) + "%"; }
         } 
